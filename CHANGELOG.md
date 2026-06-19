@@ -8,6 +8,28 @@ Versioning: [Semantic Versioning](https://semver.org/)
 
 ### Added
 
+- `components/sys_log/` — logging infrastructure component (ESPCAMFW-12):
+  per-module log tags (`LOG_TAG_CAM/RTSP/WIFI/WEBUI/OTA/SYS`) with
+  `LOG_*_E/W/I/D/V` macro wrappers; `sys_log_set_level()` runtime API;
+  `sys_log_print_system_info()` — prints firmware version, IDF version,
+  chip model/revision/cores, chip ID (EFuse MAC), WiFi STA MAC, free heap,
+  min free heap, free PSRAM, and reset reason on boot
+- `.agent/agents/deepseek-v4-pro.md` — DeepSeek-v4-pro agent context file
+- `.agent/agents/claude-opus.md` — Claude Opus agent context file
+
+### Changed
+
+- `src/main.c` — replaced inline boot log with `sys_log_print_system_info()` call;
+  removed `#include <stdio.h>` (no longer needed directly in main)
+- `src/CMakeLists.txt` — added `sys_log` to `REQUIRES`
+- `sdkconfig.defaults` — added `CONFIG_LOG_MAXIMUM_LEVEL_VERBOSE=y` to allow
+  verbose log level at runtime; documented that per-tag compile-time level
+  selection is not supported by ESP-IDF (runtime control via `sys_log_set_level()`)
+
+---
+
+### Added
+
 - `DEVELOPMENT.md` — phased implementation plan: component dependency order,
   per-component task tables with acceptance criteria, open questions, DoD
 - `docs/architecture.md` — full firmware architecture: component layout,

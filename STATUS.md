@@ -2,20 +2,23 @@
 
 **Last updated:** 2026-06-20
 **Version:** 0.0.1-dev
-**Active branch:** `main`
+**Active branch:** `feature/ESPCAMFW-12-logging-system` → pending merge to `main`
 
 ---
 
 ## Current State
 
-Repository fully documented and ready for first firmware component implementation.
-All infrastructure phases complete. ADR-001 accepted — MJPEG chosen for MVP.
-Next: `wifi_manager` component (ESPCAMFW-12).
+First firmware component (`sys_log`) implemented, reviewed (2 cycles), and ready
+for merge. Logging infrastructure is in place for all subsequent components.
+Next: `wifi_manager` component.
 
 ---
 
 ## What's Done
 
+- **[ESPCAMFW-12]** ✅ `sys_log` component — per-module tags & macro wrappers,
+  `sys_log_set_level()` runtime API, `sys_log_print_system_info()` boot diagnostics;
+  `REQUIRES` minimised to `esp_system log`; full `esp_reset_reason_t` coverage (16 values)
 - **[Infra]** ✅ Repository scaffold: `platformio.ini`, `CMakeLists.txt`,
   `src/main.c` (NVS init, main loop placeholder)
 - **[Infra]** ✅ `sdkconfig.defaults` — PSRAM (OPI), LCDCAM DVP ISR, WiFi buffers,
@@ -40,7 +43,8 @@ Next: `wifi_manager` component (ESPCAMFW-12).
 
 ## In Progress
 
-Nothing currently in progress.
+- **[ESPCAMFW-12]** `sys_log` component — ✅ implementation complete, code review
+  passed (2 cycles), pending merge
 
 ---
 
@@ -54,7 +58,7 @@ Nothing currently in progress.
 
 ## Next Up
 
-- **[ESPCAMFW-12]** `wifi_manager` component — connect, reconnect, NVS credential storage
+- **[ESPCAMFW-??]** `wifi_manager` component — connect, reconnect, NVS credential storage
 - **[ESPCAMFW-??]** `camera_driver` component — DVP init, PSRAM frame buffer pool, OV2640/OV5640
 - **[ESPCAMFW-??]** `rtsp_server` component — RTSP/RTP stack, RFC 2435 MJPEG packetiser
 - **[ESPCAMFW-??]** `ota_manager` component — HTTPS OTA, dual-slot, rollback
