@@ -1,3 +1,37 @@
+# PlatformIO
 .pio/
+.pioenvs/
+.piolibdeps/
+
+# ESP-IDF build artifacts
+build/
+sdkconfig
+sdkconfig.old
+managed_components/
+
+# IDE
 .vscode/
+.idea/
+*.swp
+*.swo
+
+# Binaries
 *.bin
+*.elf
+*.map
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Agent configurations
+opencode.json
+
+# Agent reports
+GEMMA*
+DEEPSEEK*
