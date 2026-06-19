@@ -1,6 +1,6 @@
 # Status — esp32-cam-rtsp
 
-**Last updated:** 2026-06-19
+**Last updated:** 2026-06-20
 **Version:** 0.0.1-dev
 **Active branch:** `main`
 
@@ -8,9 +8,9 @@
 
 ## Current State
 
-Repository scaffold complete. Agent context files in place (Фаза 1).
-Documentation and workflow infrastructure added (Фаза 2).
-No functional firmware components implemented yet.
+Repository fully documented and ready for first firmware component implementation.
+All infrastructure phases complete. ADR-001 accepted — MJPEG chosen for MVP.
+Next: `wifi_manager` component (ESPCAMFW-12).
 
 ---
 
@@ -27,6 +27,14 @@ No functional firmware components implemented yet.
 - **[Фаза 1]** ✅ `.agent/skills/` — project overview, repo structure, architecture decisions
 - **[Фаза 2]** ✅ `README.md`, `CONTRIBUTING.md`, `CHANGELOG.md`, `STATUS.md`
 - **[Фаза 2]** ✅ `scripts/pre-pr.ps1` — pre-PR build + branch + CHANGELOG check
+- **[Фаза 3]** ✅ `.github/workflows/ci.yml` — PlatformIO build CI
+- **[Фаза 3]** ✅ `.github/workflows/release.yml` — release pipeline on v* tags
+- **[Фаза 3]** ✅ `.github/PULL_REQUEST_TEMPLATE.md`, `ISSUE_TEMPLATE/`
+- **[Фаза 3]** ✅ `.editorconfig`
+- **[Docs]** ✅ `DEVELOPMENT.md` — phased plan with component dependency order
+- **[Docs]** ✅ `docs/architecture.md` — component layout, task map, memory budget,
+  data flow, RTSP lifecycle, OTA flow
+- **[Docs]** ✅ `docs/adr/ADR-001-mjpeg-vs-h264.md` — **MJPEG accepted for MVP**
 
 ---
 
@@ -38,16 +46,15 @@ Nothing currently in progress.
 
 ## Blocked / Open Questions
 
-- Video encoding format: MJPEG vs H.264 — decision needed before implementing
-  `rtp_packetizer` component (pending ADR)
-- OTA trigger mechanism: push from `crestvital-edge` vs pull on schedule — TBD
-- Target resolution and frame rate: confirmation needed from inference team
+- OTA trigger protocol — HTTPS push from `crestvital-edge` vs pull on schedule — TBD
+- Target frame rate and resolution — confirmation needed from `crestvital-edge` team
+- Number of concurrent RTSP clients required for MVP
 
 ---
 
 ## Next Up
 
-- **Фаза 3** — GitHub infrastructure: CI workflow, issue templates, PR template, `.editorconfig`
-- **[MVP-???]** `wifi_manager` component — connect, reconnect, NVS credential storage
-- **[MVP-???]** `camera_driver` component — DVP init, PSRAM frame buffer allocation, OV2640/OV5640
-- **[MVP-???]** `rtsp_server` component — minimal RTSP/RTP stack
+- **[ESPCAMFW-12]** `wifi_manager` component — connect, reconnect, NVS credential storage
+- **[ESPCAMFW-??]** `camera_driver` component — DVP init, PSRAM frame buffer pool, OV2640/OV5640
+- **[ESPCAMFW-??]** `rtsp_server` component — RTSP/RTP stack, RFC 2435 MJPEG packetiser
+- **[ESPCAMFW-??]** `ota_manager` component — HTTPS OTA, dual-slot, rollback
