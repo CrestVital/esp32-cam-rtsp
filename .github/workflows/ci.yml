@@ -1,0 +1,46 @@
+name: CI
+
+on:
+  push:
+    branches: ["main", "feature/**", "fix/**", "docs/**", "chore/**"]
+  pull_request:
+    branches: ["main"]
+
+jobs:
+  build:
+    name: PlatformIO Build
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Cache PlatformIO
+        uses: actions/cache@v4
+        with:
+          path: ~/.platformio
+          key: ${{ runner.os }}-pio-${{ hashFiles('platformio.ini') }}
+          restore-keys: |
+            ${{ runner.os }}-pio-
+
+      - name: Install PlatformIO
+        run: pip install platformio
+
+      - name: Build firmware
+        run: pio run -e lilygo-t-display-s3
+
+      - name: Check for compiler warnings
+        run: |
+          pio run -e lilygo-t-display-s3 2>&1 | tee build.log
+          if grep -E "warning:" build.log; then
+            echo "::warning::Compiler warnings detected — review build.log"
+          fi
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        if: success()
+        with:
+          name: firmware-${{ github.sha }}
+          path: |
+            .pio/build/lilygo-t-display-s3/firmware.bin
+            .pio/build/lilygo-t-display-s3/firmware.elf
+          retention-days: 7

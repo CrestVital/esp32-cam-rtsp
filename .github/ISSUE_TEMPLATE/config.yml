@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Project Tasks (Jira)
+    url: https://crestvital.atlassian.net/jira/software/projects/MVP/boards
+    about: Planned work and sprint tasks are tracked in Jira, not GitHub Issues.
+  - name: Architecture & ADRs
+    url: https://github.com/CrestVital/esp32-cam-rtsp/blob/main/docs/adr
+    about: Architecture decisions for firmware components.
