@@ -1,9 +1,9 @@
-#include <stdio.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "esp_log.h"
 #include "esp_err.h"
 #include "nvs_flash.h"
+#include "sys_log.h"
 
 static const char *TAG = "main";
 
@@ -19,9 +19,7 @@ void app_main(void)
     }
     ESP_ERROR_CHECK(ret);
 
-    ESP_LOGI(TAG, "NVS initialized");
-    ESP_LOGI(TAG, "System ready. Heap free: %lu bytes",
-             (unsigned long)esp_get_free_heap_size());
+    sys_log_print_system_info();
 
     /* Main loop placeholder */
     while (1) {
