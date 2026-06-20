@@ -75,6 +75,9 @@ Agents may run `git add` (stage files). Nothing else that touches git history.
 
 ---
 
+- Unit tests are mandatory for every new component: `test/components/<name>/test_<name>.c`
+  must exist and pass `make -f test/Makefile` before the ticket is considered done.
+
 ## Jira
 
 - Instance: `crestvital.atlassian.net`

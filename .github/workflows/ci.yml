@@ -44,3 +44,11 @@ jobs:
             .pio/build/lilygo-t-display-s3/firmware.bin
             .pio/build/lilygo-t-display-s3/firmware.elf
           retention-days: 7
+
+  test:
+    name: Host-side Unit Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build and run tests
+        run: make -f test/Makefile
