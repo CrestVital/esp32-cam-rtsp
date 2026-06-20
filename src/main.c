@@ -4,6 +4,7 @@
 #include "esp_err.h"
 #include "nvs_flash.h"
 #include "sys_log.h"
+#include "app_event.h"
 
 static const char *TAG = "main";
 
@@ -28,6 +29,12 @@ void app_main(void)
         ret = nvs_flash_init();
     }
     ESP_ERROR_CHECK(ret);
+
+    /* Initialise the application event loop.
+     * Must run before any component that publishes or subscribes to
+     * APP_EVENT_BASE events. Fatal on failure — nothing can function
+     * without inter-module messaging. */
+    ESP_ERROR_CHECK(app_event_loop_init());
 
     /* Dump chip info, MAC addresses, free heap/PSRAM, and reset reason.
      * Called once at boot — useful as the first line of a crash log. */

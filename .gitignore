@@ -38,3 +38,13 @@ opencode.json
 GEMMA*
 DEEPSEEK*
 OPUS*
+
+# Logs in any folder
+**/*.log
+*.log
+
+# Host test runner binaries
+test_runner_*
+
+# Temporary / backup files
+*.bak
