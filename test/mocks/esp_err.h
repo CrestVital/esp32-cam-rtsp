@@ -16,6 +16,9 @@ typedef int32_t esp_err_t;
 #define ESP_ERR_NVS_INVALID_NAME   0x1103
 #define ESP_ERR_NVS_INVALID_LENGTH 0x1104
 
+/* Host-side stub covering only the error codes used in this project's
+ * unit tests. Not exhaustive — real ESP-IDF defines hundreds of codes.
+ * Unknown values fall through to "UNKNOWN_ERROR" to keep tests running. */
 static inline const char *esp_err_to_name(esp_err_t code)
 {
     switch (code) {
@@ -31,6 +34,11 @@ static inline const char *esp_err_to_name(esp_err_t code)
     }
 }
 
+/* Aborts the process on non-OK esp_err_t values.
+ *
+ * Uses fprintf(stderr, ...) instead of ESP_LOGE because this mock runs
+ * on the host build system where the ESP-IDF logging layer is absent.
+ * The file:line annotation helps locate failing checks in test output. */
 #define ESP_ERROR_CHECK(x) do { \
     esp_err_t _err = (x); \
     if (_err != ESP_OK) { \

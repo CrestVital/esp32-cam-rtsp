@@ -7,12 +7,21 @@ static app_config_t g_cfg;
 
 void setUp(void)
 {
+    /* Reset the entire mock NVS store and zero the config struct before
+     * every test case. Called automatically by the Unity framework —
+     * this guarantees no state leaks from a previous test, even if that
+     * test crashed or was aborted mid-way.
+     *
+     * Directly calling mock_nvs_reset() also restores the flash-init
+     * injection variables (mock_nvs_flash_init_ret, etc.) to ESP_OK. */
     mock_nvs_reset();
     memset(&g_cfg, 0, sizeof(g_cfg));
 }
 
 void tearDown(void)
 {
+    /* Intentionally empty — cleanup is done in setUp() to ensure a
+     * clean state regardless of the test outcome (pass, fail, skip). */
 }
 
 /* ── Group A: config_save() validation — invalid values rejected ──────── */
@@ -351,6 +360,12 @@ void test_load_empty_mdns_name_uses_default(void)
 
 int main(void)
 {
+    /* Unity test runner entry point.
+     *
+     * UNITY_BEGIN() resets internal counters and state.
+     * Each RUN_TEST() macro executes one test case with setUp/tearDown.
+     * UNITY_END() prints the summary and returns the failure count
+     * (0 = all passed). */
     UNITY_BEGIN();
     RUN_TEST(test_save_null_returns_invalid_arg);
     RUN_TEST(test_save_rtsp_port_zero_rejected);
