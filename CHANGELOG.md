@@ -8,6 +8,14 @@ Versioning: [Semantic Versioning](https://semver.org/)
 
 ### Added
 
+- `components/nvs_config/` — NVS configuration storage component (ESPCAMFW-13):
+  `app_config_t` struct with 10 device parameters (WiFi SSID/password, RTSP port,
+  camera resolution/FPS/brightness, HTTP Basic Auth credentials, mDNS hostname);
+  `config_init()` / `config_load()` / `config_save()` / `config_reset()` API;
+  per-field range validation with named constants; factory reset via
+  `nvs_flash_erase()` + `nvs_flash_init()`; graceful degradation to defaults on
+  any NVS error (no boot-loop possible); all parameters persisted in namespace
+  `espcamfw`, one NVS key per field
 - `components/sys_log/` — logging infrastructure component (ESPCAMFW-12):
   per-module log tags (`LOG_TAG_CAM/RTSP/WIFI/WEBUI/OTA/SYS`) with
   `LOG_*_E/W/I/D/V` macro wrappers; `sys_log_set_level()` runtime API;
@@ -19,9 +27,11 @@ Versioning: [Semantic Versioning](https://semver.org/)
 
 ### Changed
 
-- `src/main.c` — replaced inline boot log with `sys_log_print_system_info()` call;
+- `src/main.c` — added `config_init()` call after NVS flash init; logs loaded
+  config parameters (RTSP port, resolution, FPS, mDNS name) on boot;
+  replaced inline boot log with `sys_log_print_system_info()` call;
   removed `#include <stdio.h>` (no longer needed directly in main)
-- `src/CMakeLists.txt` — added `sys_log` to `REQUIRES`
+- `src/CMakeLists.txt` — added `nvs_config` and `sys_log` to `REQUIRES`
 - `sdkconfig.defaults` — added `CONFIG_LOG_MAXIMUM_LEVEL_VERBOSE=y` to allow
   verbose log level at runtime; documented that per-tag compile-time level
   selection is not supported by ESP-IDF (runtime control via `sys_log_set_level()`)
