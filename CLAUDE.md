@@ -182,6 +182,23 @@ idf.py -p COM3 flash monitor
 
 ---
 
+## Testing
+
+Host-side unit tests use the Unity framework (vendored in `third-party/unity/`).
+Tests compile with standard GCC — no ESP-IDF required.
+
+### Rules
+- Every new component must have a corresponding test file in `test/components/<component_name>/`
+- Mock headers for ESP-IDF APIs live in `test/mocks/` — never mix with `components/`
+- All third-party libraries live in `third-party/` — the only location for vendored code
+- Run tests locally: `make -f test/Makefile` from the repository root
+- Tests run automatically in CI (job `test`, parallel to `build`)
+
+### Adding tests for a new component
+1. Create `test/components/<component_name>/test_<component_name>.c`
+2. Add mock headers to `test/mocks/` if new ESP-IDF APIs are needed
+3. Add the new source files to `SRCS` in `test/Makefile`
+
 ## Key Constraints
 
 - Frame buffers are large (320×240 JPEG ≈ 15–40 KB each). Always allocate from PSRAM.

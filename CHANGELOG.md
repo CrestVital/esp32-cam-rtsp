@@ -8,6 +8,14 @@ Versioning: [Semantic Versioning](https://semver.org/)
 
 ### Added
 
+- Test infrastructure: Unity host-side unit tests (ESPCAMFW-35)
+  - Unity 2.6.0 vendored in `third-party/unity/`
+  - ESP-IDF mock headers in `test/mocks/` (esp_err, esp_log, nvs, nvs_flash)
+  - 34 unit tests for `nvs_config` component in `test/components/nvs_config/`
+  - `test/Makefile` for GCC-only build (no ESP-IDF required)
+  - CI job `test` runs parallel to `build` on every push
+  - `scripts/hooks/pre-commit` with `printf()` detector excluding `third-party/`
+  - `scripts/install-hooks.ps1` for hook installation on developer machines
 - `components/sys_log/` — logging infrastructure component (ESPCAMFW-12):
   per-module log tags (`LOG_TAG_CAM/RTSP/WIFI/WEBUI/OTA/SYS`) with
   `LOG_*_E/W/I/D/V` macro wrappers; `sys_log_set_level()` runtime API;

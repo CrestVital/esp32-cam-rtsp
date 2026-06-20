@@ -251,4 +251,5 @@ Agents may stage files with `git add`. Nothing else.
 - [ ] No allocations from internal heap for buffers > 8 KB
 - [ ] ISR functions marked `IRAM_ATTR`, no blocking calls inside ISRs
 - [ ] `pio run -e lilygo-t-display-s3` passes with zero errors and zero warnings
+- [ ] `test/components/<component_name>/test_<component_name>.c` exists with >= 8 test cases and `make -f test/Makefile` passes
 - [ ] Implementation report written (see agent-specific file for format)
