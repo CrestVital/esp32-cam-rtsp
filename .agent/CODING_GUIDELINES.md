@@ -230,6 +230,79 @@ Agents may stage files with `git add`. Nothing else.
 
 ---
 
+## Inline Code Comments
+
+Inline comments are **mandatory** in every `.c` implementation file. They are the
+primary tool for helping teammates understand *why* the code does what it does --
+not just *what* it does. Logs alone are not a substitute for comments.
+
+### Rule 1 -- Implementation preamble (required before every function body)
+
+Every function definition must open with a short prose block (inside the body,
+before any code) that explains the purpose, key assumptions, and any non-obvious
+behaviour. Keep it concise -- 2 to 6 lines is typical.
+
+```c
+esp_err_t camera_init(const camera_config_t *config)
+{
+    /* Initialise the OV camera sensor and allocate PSRAM frame buffers.
+     *
+     * The sensor detection relies on I2C being already initialised by the
+     * caller. Frame buffers are allocated from PSRAM; if PSRAM is absent or
+     * full, the function returns ESP_ERR_NO_MEM without touching the hardware.
+     * Safe to call more than once -- a second call reinitialises the sensor. */
+
+    ...
+}
+```
+
+### Rule 2 -- Logic-block comments (required for every non-trivial block)
+
+Every distinct step inside a function -- validation, allocation, state machine
+transition, protocol handshake, retry loop, error recovery, etc. -- must be
+preceded by a single-line or short multi-line comment that names the step and
+explains *why* it exists, especially when the reason is not self-evident from
+the code.
+
+```c
+/* Validate input ranges before touching NVS to avoid a partial write. */
+if (cfg->rtsp_port < RTSP_PORT_MIN) { ... }
+
+/* Two-step string read: first query the required buffer size, then allocate
+ * and read. Avoids a fixed-size stack buffer and handles arbitrarily long
+ * stored strings safely. */
+size_t required_len = 0;
+esp_err_t ret = nvs_get_str(handle, key, NULL, &required_len);
+
+/* Key absent on first boot -- not an error, apply the compile-time default. */
+if (ret == ESP_ERR_NVS_NOT_FOUND) { ... }
+```
+
+### Rule 3 -- What NOT to comment
+
+Do not add comments that merely restate the code:
+
+```c
+/* BAD -- restates the obvious */
+cfg->rtsp_port = DEFAULT_RTSP_PORT;  /* set rtsp_port to default */
+
+/* GOOD -- explains the reason */
+cfg->rtsp_port = DEFAULT_RTSP_PORT;  /* stored value out of range; fall back to safe default */
+```
+
+### Rule 4 -- Comment style
+
+- Use `/* ... */` block style for C99 compatibility (not `//`).
+- Wrap long comment lines at **80 characters** even when the code limit is 100.
+- Do not use decorative lines of `*` or `=` inside `.c` files.
+- Do not add a file-level banner comment -- the Doxygen block in the header is sufficient.
+
+### Checklist (per function, in addition to the Doxygen checklist above)
+
+- [ ] Implementation preamble present (purpose + key assumptions)
+- [ ] Every non-trivial logic block has a preceding comment
+- [ ] No "restates the code" comments
+- [ ] Comments use `/* */` style, wrapped at 80 chars
 ## What NOT to Do
 
 - **NEVER run `git commit`, `git push`, or any git command that writes to history.**
@@ -247,6 +320,7 @@ Agents may stage files with `git add`. Nothing else.
 ## Definition of Done (applies to all tickets)
 
 - [ ] All new functions documented with Doxygen comments
+- [ ] All `.c` function bodies have implementation preamble + logic-block comments
 - [ ] All `esp_err_t` return values checked
 - [ ] No allocations from internal heap for buffers > 8 KB
 - [ ] ISR functions marked `IRAM_ATTR`, no blocking calls inside ISRs
