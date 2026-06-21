@@ -12,11 +12,14 @@ if [ "$BRANCH" = "main" ] || [ "$BRANCH" = "master" ]; then
     exit 1
 fi
 
-# ── printf() detector (excludes third-party/) ────────────────────────────
+# ── printf() detector (excludes third-party/ and test/mocks/) ────────────
+# Negative lookbehind (?<![a-zA-Z0-9_]) prevents false positives on
+# esp_rom_printf(), snprintf(), vprintf() and similar identifiers.
 PRINTF_FILES=$(git diff --cached --name-only | \
     grep -E '\.(c|h)$' | \
     grep -v '^third-party/' | \
-    xargs grep -lP '(?<![a-z])printf\s*\(' 2>/dev/null || true)
+    grep -v '^test/mocks/' | \
+    xargs grep -lP '(?<![a-zA-Z0-9_])printf\s*\(' 2>/dev/null || true)
 
 if [ -n "$PRINTF_FILES" ]; then
     echo "[pre-commit] ERROR: printf() found in the following files:"

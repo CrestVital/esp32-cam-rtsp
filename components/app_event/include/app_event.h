@@ -41,6 +41,7 @@ typedef enum {
     APP_EVENT_OTA_FINISHED,
     APP_EVENT_CONFIG_UPDATED,
     APP_EVENT_FACTORY_RESET,
+    APP_EVENT_SHUTDOWN,
 } app_event_id_t;
 
 /**
