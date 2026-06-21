@@ -5,6 +5,7 @@
 #include "nvs_flash.h"
 #include "sys_log.h"
 #include "app_event.h"
+#include "power_manager.h"
 
 static const char *TAG = "main";
 
@@ -35,6 +36,12 @@ void app_main(void)
      * APP_EVENT_BASE events. Fatal on failure — nothing can function
      * without inter-module messaging. */
     ESP_ERROR_CHECK(app_event_loop_init());
+
+    /* Initialise the power manager: log the boot reset reason, configure
+     * the Task Watchdog Timer (30 s timeout) and register the shutdown
+     * handler. Must run after the event loop so the handler can be
+     * registered. */
+    ESP_ERROR_CHECK(power_manager_init());
 
     /* Dump chip info, MAC addresses, free heap/PSRAM, and reset reason.
      * Called once at boot — useful as the first line of a crash log. */

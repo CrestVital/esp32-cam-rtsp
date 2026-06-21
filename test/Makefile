@@ -4,8 +4,12 @@ CFLAGS_COMMON = -std=c99 -Wall -Wextra -Werror \
                 -Ithird-party/unity \
                 -Itest/mocks
 
-CFLAGS_NVS       = $(CFLAGS_COMMON) -Icomponents/nvs_config/include
-CFLAGS_APP_EVENT = $(CFLAGS_COMMON) -Icomponents/app_event/include
+CFLAGS_NVS         = $(CFLAGS_COMMON) -Icomponents/nvs_config/include
+CFLAGS_APP_EVENT   = $(CFLAGS_COMMON) -Icomponents/app_event/include
+CFLAGS_POWER_MGR   = $(CFLAGS_COMMON) \
+                     -Icomponents/app_event/include \
+                     -Icomponents/power_manager/include \
+                     -Icomponents/sys_log/include
 
 SRCS_NVS = third-party/unity/unity.c \
            test/mocks/mock_nvs_state.c \
@@ -14,14 +18,24 @@ SRCS_NVS = third-party/unity/unity.c \
 
 SRCS_APP_EVENT = third-party/unity/unity.c \
                  test/mocks/mock_esp_event.c \
+                 test/mocks/mock_esp_log_counters.c \
                  components/app_event/app_event.c \
                  test/components/app_event/test_app_event.c
 
-.PHONY: all clean test_nvs test_app_event
+SRCS_POWER_MGR = third-party/unity/unity.c \
+                 test/mocks/mock_esp_event.c \
+                 test/mocks/mock_esp_log_counters.c \
+                 test/mocks/mock_power_helpers.c \
+                 components/app_event/app_event.c \
+                 components/power_manager/power_manager.c \
+                 test/components/power_manager/test_power_manager.c
 
-all: test_runner_nvs test_runner_app_event
+.PHONY: all clean test_nvs test_app_event test_power_mgr
+
+all: test_runner_nvs test_runner_app_event test_runner_power_mgr
 	./test_runner_nvs
 	./test_runner_app_event
+	./test_runner_power_mgr
 
 test_runner_nvs: $(SRCS_NVS)
 	$(CC) $(CFLAGS_NVS) $(SRCS_NVS) -o test_runner_nvs
@@ -29,11 +43,17 @@ test_runner_nvs: $(SRCS_NVS)
 test_runner_app_event: $(SRCS_APP_EVENT)
 	$(CC) $(CFLAGS_APP_EVENT) $(SRCS_APP_EVENT) -o test_runner_app_event
 
+test_runner_power_mgr: $(SRCS_POWER_MGR)
+	$(CC) $(CFLAGS_POWER_MGR) $(SRCS_POWER_MGR) -o test_runner_power_mgr
+
 test_nvs: test_runner_nvs
 	./test_runner_nvs
 
 test_app_event: test_runner_app_event
 	./test_runner_app_event
 
+test_power_mgr: test_runner_power_mgr
+	./test_runner_power_mgr
+
 clean:
-	rm -f test_runner_nvs test_runner_app_event
+	rm -f test_runner_nvs test_runner_app_event test_runner_power_mgr

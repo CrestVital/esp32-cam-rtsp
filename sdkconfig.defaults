@@ -36,3 +36,8 @@ CONFIG_LOG_MAXIMUM_LEVEL_VERBOSE=y
 
 # Note: ESP-IDF does not support per-tag compile-time level selection via sdkconfig.
 # Per-module runtime level control is implemented via sys_log_set_level().
+
+# Interrupt Watchdog -- protects against ISR hangs
+CONFIG_ESP_INT_WDT=y
+CONFIG_ESP_INT_WDT_TIMEOUT_MS=800
+# PSRAM access in ISR can take up to ~300 ms; 800 ms gives safe margin
