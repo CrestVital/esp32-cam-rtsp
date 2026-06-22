@@ -7,7 +7,6 @@
 build/
 sdkconfig
 sdkconfig.old
-sdkconfig.*
 !sdkconfig.defaults
 managed_components/
 
