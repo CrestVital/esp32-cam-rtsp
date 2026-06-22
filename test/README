@@ -1,11 +1,39 @@
+This directory contains host-side unit tests for the esp32-cam-rtsp firmware.
+Tests use the Unity framework (third-party/unity/) and GCC mock stubs.
 
-This directory is intended for PlatformIO Test Runner and project tests.
+## Running tests — Option A: PlatformIO native env (recommended)
 
-Unit Testing is a software testing method by which individual units of
-source code, sets of one or more MCU program modules together with associated
-control data, usage procedures, and operating procedures, are tested to
-determine whether they are fit for use. Unit testing finds problems early
-in the development cycle.
+Requires the native platform to be installed once:
+    pio pkg install -g -p native
 
-More information about PlatformIO Unit Testing:
-- https://docs.platformio.org/en/latest/advanced/unit-testing/index.html
+Run all host-test suites:
+    pio test -e native
+
+Run a single suite:
+    pio test -e native -f native/test_nvs_config
+
+## Running tests — Option B: GNU Make (legacy)
+
+    make -f test/Makefile
+
+Produces three test runner binaries and executes them sequentially.
+Use this option if PlatformIO is not available or for CI pipelines
+that do not use PlatformIO.
+
+## Test suite layout
+
+    test/native/<suite>/     PlatformIO suite directories (copies of test/components/)
+    test/components/<suite>/ Canonical test source files (referenced by the Makefile)
+    test/mocks/              Mock headers and .c stubs for ESP-IDF APIs
+
+Files in test/native/ are copies of the canonical sources in test/components/.
+Keep them in sync manually when modifying test cases.
+
+## Custom test runner
+
+    test/test_custom_runner.py
+
+Disables PlatformIO's built-in throwtheswitch/Unity package and injects
+third-party/unity/unity.c plus the correct component sources and mock stubs
+for each suite. Required to avoid linker conflicts (multiple definition of
+UnityBegin) between PlatformIO's auto-injected Unity and third-party/unity/.

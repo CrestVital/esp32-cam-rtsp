@@ -6,6 +6,24 @@ Versioning: [Semantic Versioning](https://semver.org/)
 
 ## [Unreleased]
 
+### Added — ESPCAMFW-38
+
+- [env:native] PlatformIO environment for running host tests via pio test -e native:
+  - 	est/test_custom_runner.py — custom runner inheriting UnityTestRunner;
+    sets EXTRA_LIB_DEPS = None to prevent 	hrowtheswitch/Unity injection
+    (would conflict with 	hird-party/unity/); configure_build_env() compiles
+    	hird-party/unity/unity.c plus correct component sources and mock stubs
+    per suite via BuildSources
+  - 	est/native/test_nvs_config/, 	est/native/test_app_event/,
+    	est/native/test_power_manager/ — PlatformIO suite directories (copies
+    of canonical sources in 	est/components/; kept in sync manually)
+  - 	est/README updated: documents both pio test -e native and
+    make -f test/Makefile invocation methods
+- Fix: 	est/Makefile SRCS_NVS was missing mock_esp_log_counters.c
+  (pre-existing bug exposed by GCC 16 / MinGW-w64 16.1.0)
+- Fix: 	est/mocks/esp_err.h missing trailing newline (GCC 16 warning with -Werror)
+
+
 ### Changed
 
 - Public repository cleanup — removed internal platform service names and
