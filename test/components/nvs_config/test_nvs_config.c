@@ -358,6 +358,59 @@ void test_load_empty_mdns_name_uses_default(void)
     TEST_ASSERT_EQUAL_STRING("espcam", g_cfg.mdns_name);
 }
 
+/* ── Group F: network_mode field ─────────────────────────────────────── */
+
+void test_save_invalid_network_mode_rejected(void)
+{
+    g_cfg.rtsp_port = 554;
+    g_cfg.cam_width = 1280;
+    g_cfg.cam_height = 720;
+    g_cfg.cam_fps = 15;
+    g_cfg.cam_brightness = 0;
+    strncpy(g_cfg.mdns_name, "espcam", sizeof(g_cfg.mdns_name));
+    g_cfg.network_mode = (network_mode_t)3;   /* 3 > NET_MODE_MAX (2) */
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, config_save(&g_cfg));
+}
+
+void test_load_valid_network_mode_wifi(void)
+{
+    mock_nvs_set_u8("net_mode", 0);   /* NETWORK_MODE_WIFI */
+    TEST_ASSERT_EQUAL(ESP_OK, config_load(&g_cfg));
+    TEST_ASSERT_EQUAL(NETWORK_MODE_WIFI, g_cfg.network_mode);
+}
+
+void test_load_valid_network_mode_ethernet(void)
+{
+    mock_nvs_set_u8("net_mode", 1);   /* NETWORK_MODE_ETHERNET */
+    TEST_ASSERT_EQUAL(ESP_OK, config_load(&g_cfg));
+    TEST_ASSERT_EQUAL(NETWORK_MODE_ETHERNET, g_cfg.network_mode);
+}
+
+void test_load_invalid_network_mode_uses_default(void)
+{
+    mock_nvs_set_u8("net_mode", 5);   /* out of range */
+    TEST_ASSERT_EQUAL(ESP_OK, config_load(&g_cfg));
+    TEST_ASSERT_EQUAL(NETWORK_MODE_WIFI, g_cfg.network_mode);
+}
+
+void test_save_network_mode_large_value_rejected(void)
+{
+    /* Verify that no integer truncation silently accepts an
+     * out-of-range enum value that is a multiple of 256 plus a
+     * valid remainder. 258 (0x102) would truncate to 2 under a
+     * (uint8_t) cast, passing validation incorrectly. With an
+     * (unsigned) cast the full value 258 is compared and must be
+     * rejected. */
+    g_cfg.rtsp_port = 554;
+    g_cfg.cam_width = 1280;
+    g_cfg.cam_height = 720;
+    g_cfg.cam_fps = 15;
+    g_cfg.cam_brightness = 0;
+    strncpy(g_cfg.mdns_name, "espcam", sizeof(g_cfg.mdns_name));
+    g_cfg.network_mode = (network_mode_t)258;   /* 258 > NET_MODE_MAX */
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, config_save(&g_cfg));
+}
+
 int main(void)
 {
     /* Unity test runner entry point.
@@ -401,5 +454,10 @@ int main(void)
     RUN_TEST(test_load_invalid_cam_fps_above_max_uses_default);
     RUN_TEST(test_load_invalid_cam_brightness_out_of_range_uses_default);
     RUN_TEST(test_load_empty_mdns_name_uses_default);
+    RUN_TEST(test_save_invalid_network_mode_rejected);
+    RUN_TEST(test_load_valid_network_mode_wifi);
+    RUN_TEST(test_load_valid_network_mode_ethernet);
+    RUN_TEST(test_load_invalid_network_mode_uses_default);
+    RUN_TEST(test_save_network_mode_large_value_rejected);
     return UNITY_END();
 }

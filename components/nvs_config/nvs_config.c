@@ -20,6 +20,7 @@ static const char *TAG = "nvs_config";
 #define KEY_AUTH_USER              "auth_user"
 #define KEY_AUTH_PASS_HASH         "auth_pass_hash"
 #define KEY_MDNS_NAME              "mdns_name"
+#define KEY_NET_MODE               "net_mode"
 
 #define DEFAULT_WIFI_SSID          ""
 #define DEFAULT_WIFI_PASS          ""
@@ -31,6 +32,8 @@ static const char *TAG = "nvs_config";
 #define DEFAULT_AUTH_USER          ""
 #define DEFAULT_AUTH_PASS_HASH     ""
 #define DEFAULT_MDNS_NAME          "espcam"
+#define DEFAULT_NET_MODE           NETWORK_MODE_WIFI
+#define NET_MODE_MAX               2u
 
 #define RTSP_PORT_MIN        1
 #define CAM_WIDTH_MIN        160
@@ -80,6 +83,10 @@ static void config_apply_defaults(app_config_t *cfg)
     cfg->auth_pass_hash[NVS_CONFIG_STR_MAX_LEN - 1] = '\0';
     strncpy(cfg->mdns_name,       DEFAULT_MDNS_NAME,       NVS_CONFIG_STR_MAX_LEN - 1);
     cfg->mdns_name[NVS_CONFIG_STR_MAX_LEN - 1] = '\0';
+
+    /* Network mode -- stored as uint8_t in NVS. Defaults to WiFi-only
+     * for backward compatibility with devices that have no Ethernet PHY. */
+    cfg->network_mode = DEFAULT_NET_MODE;
 }
 
 static void load_str_field(nvs_handle_t handle, const char *key,
@@ -316,6 +323,25 @@ esp_err_t config_load(app_config_t *cfg)
         cfg->cam_brightness = val_i8;
     }
 
+    /* Read network mode as uint8_t from NVS. Values exceeding
+     * NET_MODE_MAX are invalid and replaced with the default. The
+     * existing val_u8 local is reused -- no new variable needed. */
+    ret = nvs_get_u8(handle, KEY_NET_MODE, &val_u8);
+    if (ret == ESP_ERR_NVS_NOT_FOUND) {
+        ESP_LOGD(TAG, "Key '%s' not found -- using default %u", KEY_NET_MODE,
+                 (unsigned)DEFAULT_NET_MODE);
+        cfg->network_mode = DEFAULT_NET_MODE;
+    } else if (ret != ESP_OK) {
+        ESP_LOGW(TAG, "nvs_get_u8(%s) failed: %s", KEY_NET_MODE, esp_err_to_name(ret));
+        cfg->network_mode = DEFAULT_NET_MODE;
+    } else if (val_u8 > NET_MODE_MAX) {
+        ESP_LOGW(TAG, "network_mode %u out of range [0..%u] -- applying default %u",
+                 (unsigned)val_u8, NET_MODE_MAX, (unsigned)DEFAULT_NET_MODE);
+        cfg->network_mode = DEFAULT_NET_MODE;
+    } else {
+        cfg->network_mode = (network_mode_t)val_u8;
+    }
+
     /* Release the NVS handle. Read-only namespace, so no commit is
      * needed before closing. */
     nvs_close(handle);
@@ -378,6 +404,14 @@ esp_err_t config_save(const app_config_t *cfg)
      * storing an invalid value that would break mDNS at runtime. */
     if (cfg->mdns_name[0] == '\0') {
         ESP_LOGE(TAG, "config_save: mdns_name must not be empty");
+        return ESP_ERR_INVALID_ARG;
+    }
+    /* Network mode must be a valid enum value (0..NET_MODE_MAX).
+     * Values outside this range indicate a corrupted or uninitialised
+     * struct and must be rejected before opening NVS. */
+    if ((unsigned)cfg->network_mode > NET_MODE_MAX) {
+        ESP_LOGE(TAG, "config_save: network_mode %u is invalid (must be <= %u)",
+                 (unsigned)cfg->network_mode, NET_MODE_MAX);
         return ESP_ERR_INVALID_ARG;
     }
 
@@ -454,6 +488,14 @@ esp_err_t config_save(const app_config_t *cfg)
     ret = nvs_set_i8(handle, KEY_CAM_BRIGHTNESS, cfg->cam_brightness);
     if (ret != ESP_OK) {
         ESP_LOGE(TAG, "nvs_set_i8(%s) failed: %s", KEY_CAM_BRIGHTNESS, esp_err_to_name(ret));
+        nvs_close(handle);
+        return ret;
+    }
+    /* Store network mode as uint8_t in NVS; the schema has been
+     * validated above, so no range check is needed here. */
+    ret = nvs_set_u8(handle, KEY_NET_MODE, (uint8_t)cfg->network_mode);
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "nvs_set_u8(%s) failed: %s", KEY_NET_MODE, esp_err_to_name(ret));
         nvs_close(handle);
         return ret;
     }
