@@ -10,7 +10,7 @@
 
 Infrastructure components merged to `main`: `sys_log`, `nvs_config`,
 `app_event`, `power_manager`. Test infrastructure (Unity host tests) in place.
-Public repository cleanup in progress.
+Public repository cleanup complete — pending PR merge.
 
 ---
 
@@ -34,12 +34,14 @@ Public repository cleanup in progress.
 - **[Infra]** ✅ `scripts/pre-pr.ps1`, `scripts/hooks/pre-commit`
 - **[Infra]** ✅ `.github/workflows/ci.yml`, `release.yml`, PR/issue templates
 - **[Docs]** ✅ `DEVELOPMENT.md`, `docs/architecture.md`, `docs/adr/ADR-001`
+- **[chore]** ✅ Public repository cleanup — `LICENSE` (Apache 2.0), `SECURITY.md`,
+  internal references removed from all docs and templates
 
 ---
 
 ## In Progress
 
-- **[chore]** Public repository cleanup — removing internal references, adding LICENSE, SECURITY.md
+- **[chore]** `chore/public-repo-cleanup` — pending PR review and merge to `main`
 
 ---
 

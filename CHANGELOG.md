@@ -6,6 +6,33 @@ Versioning: [Semantic Versioning](https://semver.org/)
 
 ## [Unreleased]
 
+### Changed
+
+- Public repository cleanup — removed internal platform service names and
+  internal Jira project key from all documentation and templates:
+  - CLAUDE.md, AGENTS.md — Jira project key corrected to ESPCAMFW;
+    internal platform service references replaced with generic labels
+  - CONTRIBUTING.md — branch and commit examples updated to ESPCAMFW-N;
+    AI agent model names removed from section 9
+  - DEVELOPMENT.md — internal service names replaced with generic labels;
+    wifi_manager ticket column corrected
+  - README.md, docs/architecture.md, docs/adr/ADR-001-mjpeg-vs-h264.md,
+    .agent/skills/ — platform diagram and service references generalised
+  - .github/PULL_REQUEST_TEMPLATE.md, .github/ISSUE_TEMPLATE/ — Jira
+    ticket links updated to ESPCAMFW project key
+  - STATUS.md — updated to reflect current state (ESPCAMFW-12..15 merged)
+  - CHANGELOG.md — specific AI agent filenames removed from history entries
+- .gitignore — added rules for secrets and local environment overrides
+  (.env, secrets.*, config.local.*, wifi_credentials.*)
+
+### Added
+
+- LICENSE — Apache License 2.0
+- SECURITY.md — private vulnerability reporting policy
+
+---
+
+
 ### Added
 
 - Test infrastructure: Unity host-side unit tests (ESPCAMFW-35)
