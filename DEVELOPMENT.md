@@ -126,6 +126,33 @@ External ESP-IDF components (managed via `idf_component.yml` when added):
 
 ---
 
+## Board Abstraction
+
+The firmware supports multiple hardware targets. Board-specific pin assignments
+and capability flags are isolated in `boards/<name>.h` headers.
+
+Each PlatformIO environment passes `-DBOARD_HEADER="boards/<name>.h"` in
+`build_flags`. `include/board.h` includes the selected header via
+`#include BOARD_HEADER` and validates at compile time that all required
+macros are defined.
+
+### Supported boards
+
+| PlatformIO env | Board | MCU | Camera | Network | PSRAM |
+|---|---|---|---|---|---|
+| `lilygo-t-display-s3` | LilyGo T-Display S3 | ESP32-S3 | OV5640 | WiFi | 8 MB OPI |
+| `ai-thinker-esp32-cam` | AI Thinker ESP32-CAM | ESP32 | OV2640 | WiFi | 4 MB |
+| `olimex-esp32-poe` | Olimex ESP32-POE | ESP32 | OV2640 | Ethernet | none |
+
+All boards use the DVP (parallel 8-bit) camera interface. MIPI CSI-2 is not
+supported on ESP32/ESP32-S3 without an external ISP.
+
+The LilyGo T-Display S3 and Olimex ESP32-POE camera pin definitions are
+placeholders pending hardware verification. See `TODO(hardware)` comments in
+the respective board headers.
+
+---
+
 ## Open Questions
 
 - [ ] **ADR-001** — MJPEG vs H.264: decision needed before implementing `rtp_packetizer`

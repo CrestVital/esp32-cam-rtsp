@@ -6,6 +6,26 @@ Versioning: [Semantic Versioning](https://semver.org/)
 
 ## [Unreleased]
 
+### Added — ESPCAMFW-39
+
+- `boards/` directory — per-board DVP pin definitions and capability flags:
+  - `boards/ai_thinker_esp32_cam.h` — OV2640, ESP32, WiFi, 4 MB PSRAM;
+    complete pin set from AI Thinker schematic Rev 1.6
+  - `boards/lilygo_t_display_s3.h` — OV5640, ESP32-S3, WiFi, 8 MB OPI PSRAM;
+    placeholder pins with TODO(hardware) pending wiring verification
+  - `boards/olimex_esp32_poe.h` — OV2640, ESP32, Ethernet (no WiFi), no PSRAM;
+    placeholder pins verified to not overlap LAN8710/LAN8720 RMII GPIOs
+- `include/board.h` — common board abstraction header; `#include BOARD_HEADER`
+  macro expansion; compile-time `#error` checks for 19 mandatory macros;
+  mutual-exclusion check for OV2640/OV5640 sensor flags
+- `platformio.ini` — `[platformio]` section with `default_envs`; new
+  `[env:ai-thinker-esp32-cam]` and `[env:olimex-esp32-poe]` environments;
+  all three ESP32 envs pass `-DBOARD_HEADER=`; `[env:native]` unchanged
+- `.gitattributes` — `text=auto eol=lf` for all text files; binary files
+  excluded from normalization
+- `.gitignore` — `sdkconfig.*` pattern added to exclude auto-generated
+  per-env sdkconfig build artifacts
+
 ### Added — ESPCAMFW-38
 
 - [env:native] PlatformIO environment for running host tests via pio test -e native:
