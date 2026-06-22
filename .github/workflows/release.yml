@@ -52,12 +52,11 @@ jobs:
           cp .pio/build/lilygo-t-display-s3/firmware.elf esp32-cam-rtsp-${TAG}.elf
 
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
-        with:
-          name: "esp32-cam-rtsp ${{ github.ref_name }}"
-          body_path: release_notes.md
-          files: |
-            esp32-cam-rtsp-${{ github.ref_name }}.bin
-            esp32-cam-rtsp-${{ github.ref_name }}.elf
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create "${{ github.ref_name }}" \
+            --title "esp32-cam-rtsp ${{ github.ref_name }}" \
+            --notes-file release_notes.md \
+            esp32-cam-rtsp-${{ github.ref_name }}.bin \
+            esp32-cam-rtsp-${{ github.ref_name }}.elf
