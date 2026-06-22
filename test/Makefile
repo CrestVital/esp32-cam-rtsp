@@ -12,6 +12,7 @@ CFLAGS_POWER_MGR   = $(CFLAGS_COMMON) \
                      -Icomponents/sys_log/include
 
 SRCS_NVS = third-party/unity/unity.c \
+           test/mocks/mock_esp_log_counters.c \
            test/mocks/mock_nvs_state.c \
            components/nvs_config/nvs_config.c \
            test/components/nvs_config/test_nvs_config.c
