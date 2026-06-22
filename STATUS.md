@@ -8,8 +8,8 @@
 
 ## Current State
 
-Infrastructure components merged to main: sys_log, nvs_config, app_event,
-power_manager. Test infrastructure (Unity host tests) in place.
+Infrastructure components merged to main: sys_log, nvs_config (extended
+with network_mode field), app_event, power_manager. Test infrastructure (Unity host tests) in place.
 [env:native] PlatformIO environment ready — host tests runnable via both
 pio test -e native and make -f test/Makefile.
 Multi-board platform abstraction in place — three target boards supported.
@@ -22,6 +22,10 @@ Multi-board platform abstraction in place — three target boards supported.
   sys_log_set_level() runtime API, sys_log_print_system_info() boot diagnostics
 - **[ESPCAMFW-13]** ✅ nvs_config component — NVS-backed key/value config store,
   typed getters/setters, default values, Unity host tests
+- **[ESPCAMFW-40]** ✅ nvs_config extended — network_mode_t enum (WIFI/ETHERNET/BOTH),
+  network_mode field in app_config_t; NVS key "net_mode" (uint8_t); validation
+  with (unsigned) cast; default NETWORK_MODE_WIFI; 5 new host tests (39 total
+  in nvs_config suite, 57 across all suites)
 - **[ESPCAMFW-14]** ✅ app_event component — centralized FreeRTOS event loop,
   event bitmask API, shutdown/reboot events, Unity host tests
 - **[ESPCAMFW-15]** ✅ power_manager component — TWDT 30 s, ISR with
@@ -66,8 +70,6 @@ Multi-board platform abstraction in place — three target boards supported.
 
 ## Next Up
 
-- **[ESPCAMFW-40]** Extend nvs_config with network_mode field
-  (wifi / ethernet / both) — prerequisite for wifi_manager
 - **[ESPCAMFW-41]** wifi_manager component — connect, reconnect, NVS credential
   storage; conditional compile on BOARD_HAS_WIFI
 - **[ESPCAMFW-??]** camera_driver component — DVP HAL, PSRAM frame buffer pool,

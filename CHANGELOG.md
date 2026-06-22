@@ -6,6 +6,23 @@ Versioning: [Semantic Versioning](https://semver.org/)
 
 ## [Unreleased]
 
+### Added — ESPCAMFW-40
+
+- `nvs_config`: `network_mode_t` enum (`NETWORK_MODE_WIFI = 0`,
+  `NETWORK_MODE_ETHERNET = 1`, `NETWORK_MODE_BOTH = 2`) — selects the
+  active network transport; stored in NVS as `uint8_t` under key `"net_mode"`
+- `app_config_t` extended with `network_mode` field (last member);
+  default `NETWORK_MODE_WIFI` ensures backward compatibility on all
+  existing WiFi boards when key is absent from NVS
+- `config_load()` / `config_save()` updated: load validates values
+  `> NET_MODE_MAX (2)` — replace with default; save validates using
+  `(unsigned)` cast to prevent silent truncation of out-of-range enum values
+- 5 new Unity host tests (Group F) in both `test/components/nvs_config/` and
+  `test/native/test_nvs_config/`: save-invalid, load-wifi, load-ethernet,
+  load-invalid-uses-default, save-large-value-rejected (value 258 pins
+  the `(unsigned)` cast behaviour)
+- Test counts: 39 tests in `nvs_config` suite, 57 total across all suites
+
 ### Added — ESPCAMFW-39
 
 - `boards/` directory — per-board DVP pin definitions and capability flags:
