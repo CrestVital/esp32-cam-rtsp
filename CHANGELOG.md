@@ -22,8 +22,7 @@ Versioning: [Semantic Versioning](https://semver.org/)
   `sys_log_print_system_info()` — prints firmware version, IDF version,
   chip model/revision/cores, chip ID (EFuse MAC), WiFi STA MAC, free heap,
   min free heap, free PSRAM, and reset reason on boot
-- `.agent/agents/deepseek-v4-pro.md` — DeepSeek-v4-pro agent context file
-- `.agent/agents/claude-opus.md` — Claude Opus agent context file
+- `.agent/agents/` — AI agent context files
 
 ### Changed
 
@@ -72,4 +71,4 @@ Versioning: [Semantic Versioning](https://semver.org/)
 - Initial repository structure: `platformio.ini`, `CMakeLists.txt`, `src/main.c`
 - `sdkconfig.defaults` — PSRAM, LCDCAM DVP, WiFi, CPU 240 MHz, main task stack 8192
 - `partitions/partitions_ota.csv` — NVS + OTA dual-slot + LittleFS 8 MB layout
-- `.agent/agents/gemma4-26b.md` — initial Gemma agent context
+- `.agent/agents/` — initial AI agent context files
