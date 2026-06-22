@@ -1,6 +1,6 @@
 # Jira Ticket
 
-Closes [MVP-NNN](https://crestvital.atlassian.net/browse/MVP-NNN)
+Closes [ESPCAMFW-NNN](https://crestvital.atlassian.net/browse/ESPCAMFW-NNN)
 *(Replace NNN with the actual ticket number)*
 
 ## Description

@@ -3,7 +3,7 @@
 ## Purpose
 
 ESP32-S3 firmware for OV-based camera devices. Streams live video via RTSP
-to `crestvital-edge`, which segments clips and publishes events to Kafka.
+to the CrestVital edge pipeline.
 
 This firmware is a **leaf node** in the CrestVital platform — it has no
 dependencies on other CrestVital repos, but all inference and analytics
@@ -76,13 +76,13 @@ Encoding format decision: see [ADR-001](docs/adr/ADR-001-mjpeg-vs-h264.md).
 | TCP interleaved transport | — | To Do |
 
 **Acceptance criteria:**
-- `crestvital-edge` can open an RTSP session and receive frames
+- An RTSP client can open a session and receive frames
 - Stream stable for ≥ 1 hour without restart
 - At least 1 concurrent client supported
 
 ### 1.4 ota_manager component
 
-OTA firmware update triggered by `crestvital-edge` via HTTPS POST.
+OTA firmware update triggered via HTTPS POST.
 
 | Task | Ticket | Status |
 |------|--------|--------|
@@ -111,7 +111,7 @@ RGB LED heartbeat and error code signalling.
 - WiFi provisioning via SoftAP + captive portal
 - Multi-client RTSP (up to 4 concurrent viewers)
 - H.264 encoding (hardware accelerated via ESP32-S3 if feasible — see ADR-001)
-- MQTT status reporting (`camera.status` event to `crestvital-edge`)
+- MQTT status reporting (`camera.status` event to edge pipeline)
 - LittleFS rolling log with timestamps
 - Display output (ST7789): IP address, stream URL, frame rate, heap free
 
@@ -129,7 +129,7 @@ External ESP-IDF components (managed via `idf_component.yml` when added):
 ## Open Questions
 
 - [ ] **ADR-001** — MJPEG vs H.264: decision needed before implementing `rtp_packetizer`
-- [ ] Target frame rate and resolution — confirm with `crestvital-edge` team
+- [ ] Target frame rate and resolution — confirm with edge pipeline team
 - [ ] OTA trigger protocol — HTTPS push from edge vs pull on schedule
 - [ ] Number of concurrent RTSP clients required for MVP
 
@@ -138,8 +138,8 @@ External ESP-IDF components (managed via `idf_component.yml` when added):
 ## Definition of Done (Phase 1)
 
 - [ ] Device boots, connects to WiFi, and streams RTSP within 30 s
-- [ ] `crestvital-edge` successfully receives and segments the stream
-- [ ] OTA update works end-to-end from `crestvital-edge`
+- [ ] Edge pipeline successfully receives and segments the stream
+- [ ] OTA update works end-to-end
 - [ ] All components build with zero errors and zero warnings
 - [ ] All public APIs documented with Doxygen comments
 - [ ] `v0.1.0` tag created and GitHub Release published with `.bin` artifact

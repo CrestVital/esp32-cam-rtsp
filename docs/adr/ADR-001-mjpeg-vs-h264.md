@@ -9,7 +9,7 @@
 The `rtp_packetizer` component must encode camera frames into an RTP payload
 before transmission. The choice of encoding format affects: implementation
 complexity, CPU load on the ESP32-S3, latency, bandwidth, and compatibility
-with `crestvital-edge`'s RTSP client (FFmpeg-based).
+with the RTSP client on the edge pipeline (FFmpeg-based).
 
 Two options were evaluated:
 
@@ -36,7 +36,7 @@ too heavy for the available SRAM/PSRAM budget and CPU headroom at 320×240 15 fp
 | Implementation complexity | Low — RFC 2435 packetiser, ~200 LOC | High — encoder integration + RFC 6184 packetiser |
 | Latency | One frame delay | GOP delay (typically 0.5–2 s with I-frames) |
 | Bandwidth at 320×240 15 fps | ~2–4 Mbit/s | ~0.3–0.8 Mbit/s |
-| crestvital-edge compatibility | FFmpeg supports MJPEG-over-RTP natively | FFmpeg supports H.264-over-RTP natively |
+| Client compatibility | FFmpeg supports MJPEG-over-RTP natively | FFmpeg supports H.264-over-RTP natively |
 | PSRAM scratch needed | ~40 KB (one frame buffer) | ~500 KB (encoder working memory) |
 | Seek/random access | Every frame is a keyframe | Only on I-frames |
 
@@ -45,7 +45,7 @@ entirely. The bandwidth increase (4× over H.264) is acceptable on a 2.4 GHz
 WiFi link — a 320×240 MJPEG stream at 15 fps uses ~3 Mbit/s, well within
 the capacity of an 802.11n link at close range.
 
-`crestvital-edge` runs FFmpeg locally and can consume MJPEG-over-RTP without
+The edge pipeline runs FFmpeg and can consume MJPEG-over-RTP without
 any additional configuration.
 
 ## Consequences
@@ -57,7 +57,7 @@ any additional configuration.
 - `camera_driver` must configure the OV sensor for JPEG output mode
   (`PIXFORMAT_JPEG`), not raw YUV or RGB.
 - Bandwidth budget: plan for up to 4 Mbit/s per camera stream on the WiFi AP.
-- **Phase 2 revisit:** If `crestvital-edge` requires lower bandwidth (e.g. for
+- **Phase 2 revisit:** If the edge pipeline requires lower bandwidth (e.g. for
   4+ cameras on one AP), H.264 encoding should be re-evaluated. At that point,
-  consider offloading encoding to `crestvital-edge` by streaming raw YUV over
+  consider offloading encoding to the edge pipeline by streaming raw YUV over
   RTP, or using an external hardware encoder module.

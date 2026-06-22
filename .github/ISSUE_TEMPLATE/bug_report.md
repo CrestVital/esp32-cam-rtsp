@@ -54,8 +54,8 @@ Paste the relevant log section here:
 - **Camera sensor:** (OV2640 / OV5640 / other)
 - **Host OS:** (e.g. Ubuntu 22.04, Windows 11)
 - **PlatformIO version:** (output of `pio --version`)
-- **crestvital-edge version:** (if relevant)
+- **Edge pipeline version:** (if relevant)
 
 ## Jira Ticket
 
-<!-- https://crestvital.atlassian.net/browse/MVP-XX -->
+<!-- https://crestvital.atlassian.net/browse/ESPCAMFW-XX -->

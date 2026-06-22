@@ -80,8 +80,7 @@ esp32-cam-rtsp/
 Camera device (this firmware)
         │  RTSP stream over WiFi
         ▼
-crestvital-edge  ──►  Kafka  ──►  crestvital-inference
-                              ──►  crestvital-api
+CrestVital edge pipeline  ──►  inference  ──►  API
 ```
 
 ## Development

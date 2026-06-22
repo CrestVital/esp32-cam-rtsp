@@ -7,8 +7,7 @@ compatible sensors). Captures video frames over DVP/MIPI, encodes them, and
 streams via RTSP to the CrestVital platform edge pipeline.
 
 **Role in CrestVital platform:** This firmware runs on the camera nodes and feeds
-raw video into `crestvital-edge`, which publishes `segment.ready` and
-`roi_clip.ready` events to Kafka.
+raw video into the CrestVital edge pipeline for further processing.
 
 ---
 
@@ -35,7 +34,7 @@ raw video into `crestvital-edge`, which publishes `segment.ready` and
 | PlatformIO platform | `espressif32@7.0.0` |
 | Partition table | `partitions/partitions_ota.csv` (OTA + LittleFS) |
 | CI | GitHub Actions (`.github/workflows/`) |
-| Jira | crestvital.atlassian.net — project key `MVP` |
+| Jira | crestvital.atlassian.net — project key `ESPCAMFW` |
 
 ---
 
@@ -99,7 +98,7 @@ OV Camera (DVP)
     v
 camera_driver  -->  frame_buffer  -->  rtsp_server  -->  WiFi (TCP/UDP)
                                                               |
-                                                    crestvital-edge (RTSP client)
+                                                    edge pipeline (RTSP client)
 ```
 
 ### Flash Partition Layout
@@ -176,6 +175,7 @@ idf.py -p COM3 flash monitor
 ## Jira
 
 - Instance: `crestvital.atlassian.net`
+- Project key: `ESPCAMFW`
 - All Jira text (summaries, descriptions, comments): **Turkish**
 - Reports to Jira tickets: **Russian**
 - Code, comments, log messages: **English**

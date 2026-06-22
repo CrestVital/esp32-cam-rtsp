@@ -3,17 +3,17 @@
 ## Role in the CrestVital Platform
 
 `esp32-cam-rtsp` is the **camera edge firmware**. It runs on LilyGo T-Display S3
-devices mounted above livestock pens and feeds raw video into `crestvital-edge`.
+devices mounted above livestock pens and feeds raw video into the CrestVital edge pipeline.
 
 ```text
 esp32-cam-rtsp  (this repo — runs on device)
         |
         | RTSP stream (TCP/UDP over WiFi)
         v
-crestvital-edge          — pulls RTSP, segments clips, publishes events
+CrestVital edge pipeline — pulls RTSP, segments clips, publishes events
         |
-        +---> crestvital-inference  (Re-ID, disease detection, activity)
-        +---> crestvital-api        (stores events, sends alerts)
+        +---> inference  (Re-ID, disease detection, activity)
+        +---> API        (stores events, sends alerts)
 ```
 
 This firmware has **no dependencies** on other CrestVital repos. All inference
@@ -69,7 +69,7 @@ The frame-ready ISR posts buffer pointers to `frame_queue`. Consumers call
 On PLAY, starts `rtp_send_task` which drains `frame_queue` and packetises
 frames into RTP packets. Encoding format: see ADR-001.
 
-**ota_manager** — Waits for an HTTPS POST from `crestvital-edge` carrying a
+**ota_manager** — Waits for an HTTPS POST carrying a firmware binary.
 firmware binary. Downloads to the inactive OTA slot, verifies, sets boot
 partition, restarts. Calls `esp_ota_mark_app_valid_cancel_rollback()` after
 successful boot; bootloader rolls back to the previous slot on crash.
@@ -93,7 +93,7 @@ frame_buffer[0..2]  (PSRAM, 64-byte aligned, ~20–40 KB each)
 rtp_send_task
     │  RTP packetisation (RFC 2435 MJPEG or RFC 6184 H.264 — see ADR-001)
     ▼
-UDP socket  ──►  WiFi  ──►  crestvital-edge (RTSP client)
+UDP socket  ──►  WiFi  ──►  CrestVital edge pipeline (RTSP client)
 ```
 
 ---
@@ -148,7 +148,7 @@ stack (core 0). All other tasks run on core 0.
 ## RTSP Session Lifecycle
 
 ```text
-Client (crestvital-edge)          Device (rtsp_server)
+Client (RTSP client)                      Device (rtsp_server)
         │                                 │
         │── OPTIONS ──────────────────►  │
         │◄─ 200 OK ──────────────────── │
@@ -173,7 +173,7 @@ Client (crestvital-edge)          Device (rtsp_server)
 ## OTA Update Flow
 
 ```text
-crestvital-edge
+OTA trigger
     │  HTTPS POST /ota  (firmware binary)
     ▼
 ota_manager_task

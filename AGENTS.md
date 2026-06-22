@@ -7,8 +7,7 @@ compatible sensors). Captures video frames over DVP/MIPI, encodes them, and
 streams via RTSP to the CrestVital platform edge pipeline.
 
 **Role in CrestVital platform:** This firmware runs on the camera nodes and feeds
-raw video into `crestvital-edge`, which publishes `segment.ready` and
-`roi_clip.ready` events to Kafka.
+raw video into the CrestVital edge pipeline for further processing.
 
 ---
 
@@ -19,7 +18,7 @@ raw video into `crestvital-edge`, which publishes `segment.ready` and
 - **Board:** LilyGo T-Display S3 (ESP32-S3, 240 MHz, 16 MB Flash, OPI PSRAM)
 - **Camera interface:** DVP via LCDCAM peripheral (OV2640/OV5640)
 - **CI:** GitHub Actions (`.github/workflows/`)
-- **Jira:** crestvital.atlassian.net — project key `MVP`
+- **Jira:** crestvital.atlassian.net — project key `ESPCAMFW`
 
 ---
 
@@ -64,8 +63,7 @@ Read `.agent/CODING_GUIDELINES.md` before writing any code. Key rules:
 
 ## ⛔ ABSOLUTE RULE — NEVER COMMIT
 
-**No AI tool — Claude, Codex, GPT-5, Gemma, DeepSeek, Cursor, Copilot, or any
-other — may ever run `git commit`, `git push`, `git merge`, `git rebase`,
+**No AI tool may ever run `git commit`, `git push`, `git merge`, `git rebase`,
 `git tag`, or any command that creates or modifies git history.**
 
 All commits are created exclusively by the repository owner, after manual review
@@ -81,6 +79,7 @@ Agents may run `git add` (stage files). Nothing else that touches git history.
 ## Jira
 
 - Instance: `crestvital.atlassian.net`
+- Project key: `ESPCAMFW`
 - All Jira text (summaries, descriptions, comments): **Turkish**
 - Reports to Jira tickets: **Russian**
 - Code, comments, log messages: **English**

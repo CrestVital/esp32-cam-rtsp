@@ -48,3 +48,11 @@ test_runner_*
 
 # Temporary / backup files
 *.bak
+
+# Secrets and local environment overrides (never commit)
+.env
+.env.*
+secrets.*
+*.secret
+config.local.*
+wifi_credentials.*

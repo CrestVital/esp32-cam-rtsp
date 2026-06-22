@@ -99,7 +99,7 @@ See `.agent/CODING_GUIDELINES.md` for the full specification. Key rules:
 This project uses **Conventional Commits**:
 
 ```text
-<type>: <short description> #MVP-<N>
+<type>: <short description> #ESPCAMFW-<N>
 
 [optional body]
 ```
@@ -109,9 +109,9 @@ Types: `feat`, `fix`, `test`, `docs`, `refactor`, `chore`
 Examples:
 
 ```text
-feat: add camera_init with PSRAM frame buffer allocation #MVP-101
-fix: correct DVP pixel clock divider for OV5640 at 20 fps #MVP-108
-docs: add ADR for MJPEG vs H.264 encoding choice #MVP-112
+feat: add camera_init with PSRAM frame buffer allocation #ESPCAMFW-101
+fix: correct DVP pixel clock divider for OV5640 at 20 fps #ESPCAMFW-108
+docs: add ADR for MJPEG vs H.264 encoding choice #ESPCAMFW-112
 ```
 
 > **Commits are created exclusively by the repository owner.**
@@ -124,9 +124,9 @@ docs: add ADR for MJPEG vs H.264 encoding choice #MVP-112
 
 | Type | Pattern | Example |
 |------|---------|---------|
-| Feature | `feature/MVP-<N>-<desc>` | `feature/MVP-101-camera-init` |
-| Bug fix | `fix/MVP-<N>-<desc>` | `fix/MVP-108-dvp-clock` |
-| Docs | `docs/MVP-<N>-<desc>` | `docs/MVP-112-adr-encoding` |
+| Feature | `feature/ESPCAMFW-<N>-<desc>` | `feature/ESPCAMFW-101-camera-init` |
+| Bug fix | `fix/ESPCAMFW-<N>-<desc>` | `fix/ESPCAMFW-108-dvp-clock` |
+| Docs | `docs/ESPCAMFW-<N>-<desc>` | `docs/ESPCAMFW-112-adr-encoding` |
 | Chore | `chore/<desc>` | `chore/update-platformio-platform` |
 
 ---
@@ -162,8 +162,7 @@ Fix all reported issues before opening the PR.
 
 ## 9. AI-Assisted Development
 
-AI coding agents (Claude, Gemma, DeepSeek) are used for implementation and
-code review on this project.
+AI coding agents are used for implementation and code review on this project.
 
 **Critical rule:** AI tools must never commit. All commits are created by the
 repository owner after manual review of every changed file.
@@ -174,5 +173,5 @@ Agent configuration files are in `.agent/` (committed to git, never gitignored):
 |------|---------|
 | `CODING_GUIDELINES.md` | Rules for all coding agents |
 | `REVIEW_GUIDELINES.md` | Rules for code review agents |
-| `agents/gemma4-26b.md` | Gemma-specific instructions |
+| `agents/` | Per-agent configuration files |
 | `skills/` | Detailed project knowledge for agents |
