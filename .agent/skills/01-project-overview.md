@@ -4,7 +4,7 @@
 
 `esp32-cam-rtsp` is the **camera edge firmware** for the CrestVital livestock
 monitoring platform. It runs on LilyGo T-Display S3 (ESP32-S3) devices mounted
-above livestock pens and streams live video to the `crestvital-edge` service.
+above livestock pens and streams live video to the CrestVital edge pipeline.
 
 ## Role in CrestVital Platform
 
@@ -13,12 +13,12 @@ Camera device (this firmware)
         |
         | RTSP stream (TCP/UDP over WiFi)
         v
-crestvital-edge              — pulls RTSP stream, segments clips
+CrestVital edge pipeline     — pulls RTSP stream, segments clips
         |
-        | MQTT → Kafka
+        |
         v
-crestvital-inference         — Re-ID, disease detection, activity tracking
-crestvital-api               — stores events, sends alerts
+inference                    — Re-ID, disease detection, activity tracking
+API                          — stores events, sends alerts
 ```
 
 ## Target Hardware
@@ -36,5 +36,5 @@ See `STATUS.md` for current state. See `DEVELOPMENT.md` for phased plan.
 
 ## Jira
 
-- Project key: `MVP`
+- Project key: `ESPCAMFW`
 - Instance: `crestvital.atlassian.net`

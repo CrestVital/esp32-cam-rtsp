@@ -11,7 +11,7 @@ Address     Name        Size     Purpose
 0x7E0000    littlefs     8 MB    Rolling logs, config files (mounted at /littlefs)
 ```
 
-**Why two OTA slots:** Enables safe over-the-air updates. `crestvital-edge` triggers
+**Why two OTA slots:** Enables safe over-the-air updates triggered remotely.
 OTA via HTTPS. On failure, the device boots from the previous slot automatically.
 
 **Why LittleFS (not FAT or SPIFFS):** Power-loss safe. SPIFFS is deprecated in
@@ -86,7 +86,7 @@ SDP describes a single video track (H.264 or MJPEG, TBD per ADR).
 ## OTA Update Flow
 
 ```text
-crestvital-edge  --HTTPS POST-->  ota_manager_task
+OTA trigger  --HTTPS POST-->  ota_manager_task
                                        |
                                esp_ota_begin()
                                [download & write chunks to ota_1]

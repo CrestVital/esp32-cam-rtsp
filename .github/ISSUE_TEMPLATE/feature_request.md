@@ -42,5 +42,5 @@ Add any other context, datasheet references, or links here.
 
 ## Jira Ticket
 
-<!-- https://crestvital.atlassian.net/browse/MVP-XX -->
+<!-- https://crestvital.atlassian.net/browse/ESPCAMFW-XX -->
 <!-- If this is planned work, please file it in Jira first -->
