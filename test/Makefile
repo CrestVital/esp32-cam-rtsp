@@ -14,6 +14,7 @@ CFLAGS_POWER_MGR   = $(CFLAGS_COMMON) \
 
 CFLAGS_WIFI_MANAGER = $(CFLAGS_COMMON) \
                       -Wno-string-compare \
+                      -Wno-address \
                       -Icomponents/wifi_manager/include \
                       -Icomponents/app_event/include \
                       -DCONFIG_WIFI_MANAGER_ENABLED=1
