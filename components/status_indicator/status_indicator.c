@@ -25,30 +25,11 @@ static inline esp_err_t display_manager_update_status(const display_status_t *s)
     return ESP_OK;
 }
 #  endif
-#endif
-
-/* Provide safe defaults if sdkconfig has not yet been generated.
- * espressif32@7.x does not always apply board_build.sdkconfig_defaults
- * before the first compilation pass, leaving these macros undefined.
- * Defaulting to 0 / -1 selects the log-only path, which requires no
- * hardware headers and compiles on every target. */
-#ifndef CONFIG_STATUS_INDICATOR_HAS_DISPLAY
-#  define CONFIG_STATUS_INDICATOR_HAS_DISPLAY 0
-#endif
-#ifndef CONFIG_STATUS_INDICATOR_LED_PIN
-#  define CONFIG_STATUS_INDICATOR_LED_PIN -1
-#endif
-#ifndef CONFIG_STATUS_INDICATOR_LED_ACTIVE_LOW
-#  define CONFIG_STATUS_INDICATOR_LED_ACTIVE_LOW 0
-#endif
-
-/* LEDC and GPIO headers are only needed on LED path (LED_PIN != -1).
- * Including them on log-only boards (e.g. Olimex, LED_PIN == -1) or
- * before sdkconfig is generated would cause a missing-header error. */
-#if !CONFIG_STATUS_INDICATOR_HAS_DISPLAY && defined(ESP_PLATFORM) \
-    && CONFIG_STATUS_INDICATOR_LED_PIN != -1
-#  include "driver/ledc.h"
-#  include "driver/gpio.h"
+#else
+#  ifdef ESP_PLATFORM
+#    include "driver/ledc.h"
+#    include "driver/gpio.h"
+#  endif
 #endif
 
 static const char *TAG = "status_indicator";

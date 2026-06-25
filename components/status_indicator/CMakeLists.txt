@@ -1,7 +1,7 @@
 idf_component_register(
     SRCS "status_indicator.c"
     INCLUDE_DIRS "include"
-    REQUIRES log driver
+    REQUIRES log esp_driver_ledc esp_driver_gpio
 )
 
 if(CONFIG_STATUS_INDICATOR_HAS_DISPLAY)
