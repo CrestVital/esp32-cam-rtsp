@@ -1,3 +1,4 @@
+#include <stddef.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 
@@ -34,7 +35,7 @@ void vTaskDelay(TickType_t ticks)
 
 uint32_t ulTaskNotifyTake(BaseType_t clear_on_exit, TickType_t timeout)
 {
-    /* Always returns 0 — simulates a timeout without notification.
+    /* Always returns 0 -- simulates a timeout without notification.
      * Tests that need the reconnect task to proceed should inject
      * behaviour at a higher level (e.g. by manipulating static state
      * directly before calling the public API). */

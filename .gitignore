@@ -9,6 +9,7 @@ sdkconfig
 sdkconfig.old
 sdkconfig.*
 !sdkconfig.defaults
+!test/mocks/sdkconfig.h
 managed_components/
 
 # IDE
