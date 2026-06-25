@@ -1,0 +1,18 @@
+menu "Status Indicator"
+
+    config STATUS_INDICATOR_HAS_DISPLAY
+        bool "Board has a display (status shown via display_manager)"
+        default n
+
+    config STATUS_INDICATOR_LED_PIN
+        int "LED GPIO pin number (-1 = no LED)"
+        depends on !STATUS_INDICATOR_HAS_DISPLAY
+        default -1
+        range -1 48
+
+    config STATUS_INDICATOR_LED_ACTIVE_LOW
+        bool "LED is active-low (logic is inverted)"
+        depends on !STATUS_INDICATOR_HAS_DISPLAY
+        default n
+
+endmenu

@@ -20,5 +20,6 @@ void       vTaskDelete(TaskHandle_t handle);
 void       vTaskDelay(TickType_t ticks);
 
 /* Notification API — needed by the reconnect task */
+static inline TaskHandle_t xTaskGetCurrentTaskHandle(void) { return (TaskHandle_t)0xBEEF0002; }
 uint32_t ulTaskNotifyTake(BaseType_t clear_on_exit, TickType_t timeout);
 BaseType_t xTaskNotifyGive(TaskHandle_t handle);

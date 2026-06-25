@@ -6,6 +6,46 @@ Versioning: [Semantic Versioning](https://semver.org/)
 
 ## [Unreleased]
 
+### Added — ESPCAMFW-42
+
+- `status_indicator` ESP-IDF component — single entry-point for device status
+  indication; backend selected at compile time via Kconfig:
+  - **Display path** (`CONFIG_STATUS_INDICATOR_HAS_DISPLAY=y`): calls
+    `display_manager_update_status()` with `state_name` + `state_id`; stub
+    with `TODO #ESPCAMFW-26` active until `display_manager` is implemented
+  - **LED path** (`LED_PIN != -1`, `ESP_PLATFORM`): LEDC PWM (13-bit, 5 kHz),
+    per-state blink patterns, active-low inversion, FreeRTOS `indicator_task`
+    (priority 2, stack 2048 B); deterministic shutdown via task notification
+    (3000 ms timeout, force-kill fallback)
+  - **Log-only path** (`LED_PIN == -1`): `ESP_LOGI` on state change, no hardware
+- Public API: `status_indicator_init()`, `status_indicator_deinit()`,
+  `status_indicator_set_state(indicator_state_t)`
+- `indicator_state_t` enum: `BOOT`, `WIFI_CONNECTING`, `WIFI_CONNECTED`,
+  `WIFI_ERROR`, `STREAMING`, `OTA`, `ERROR` (steady-on via LEDC duty)
+- LED blink patterns per ticket spec: BOOT 1 Hz, WIFI_CONNECTING 5 Hz,
+  WIFI_CONNECTED 2×fast+2 s pause, WIFI_ERROR 3×fast+1 s pause,
+  STREAMING 0.5 Hz, OTA fast/slow, ERROR steady-on
+- 8 Unity host tests (8/8 pass, `-Wall -Wextra -Werror`, 0 warnings);
+  total host suite: 75 tests across 5 components, 0 failures
+- `test/mocks/freertos/semphr.h` — new mock for `SemaphoreHandle_t` host build
+- `test/mocks/freertos/task.h` — extended with `xTaskGetCurrentTaskHandle`,
+  `ulTaskNotifyTake`, `xTaskNotifyGive` stubs
+
+### Changed — ESPCAMFW-42
+
+- `platformio.ini`: `board_build.sdkconfig_defaults` added to all three
+  firmware envs pointing to per-board sdkconfig fragments
+- `sdkconfig.defaults.lilygo-t-display-s3`: `CONFIG_STATUS_INDICATOR_HAS_DISPLAY=y`
+- `sdkconfig.defaults.ai-thinker-esp32-cam`: `LED_PIN=33`, `ACTIVE_LOW=y`
+- `sdkconfig.defaults.olimex-esp32-poe`: `LED_PIN=-1` (log-only)
+- `.gitignore`: added `!sdkconfig.defaults.*` exception to allow tracking of
+  board-specific sdkconfig fragments without `git add -f`
+- `src/main.c`: `status_indicator_init()` + `set_state(INDICATOR_STATE_BOOT)`
+  after `power_manager_init()`; `set_state(INDICATOR_STATE_WIFI_CONNECTING)`
+  before `wifi_manager_connect()`
+- Test counts: 75 host tests (39 nvs_config + 10 app_event + 8 power_manager +
+  10 wifi_manager + 8 status_indicator), previously 67
+
 ### Added — ESPCAMFW-41
 
 - `wifi_manager` ESP-IDF component — full WiFi connection lifecycle for
@@ -92,19 +132,19 @@ Versioning: [Semantic Versioning](https://semver.org/)
 ### Added — ESPCAMFW-38
 
 - [env:native] PlatformIO environment for running host tests via pio test -e native:
-  - 	est/test_custom_runner.py — custom runner inheriting UnityTestRunner;
-    sets EXTRA_LIB_DEPS = None to prevent 	hrowtheswitch/Unity injection
-    (would conflict with 	hird-party/unity/); configure_build_env() compiles
-    	hird-party/unity/unity.c plus correct component sources and mock stubs
+  - test/test_custom_runner.py — custom runner inheriting UnityTestRunner;
+    sets EXTRA_LIB_DEPS = None to prevent throwtheswitch/Unity injection
+    (would conflict with third-party/unity/); configure_build_env() compiles
+    third-party/unity/unity.c plus correct component sources and mock stubs
     per suite via BuildSources
-  - 	est/native/test_nvs_config/, 	est/native/test_app_event/,
-    	est/native/test_power_manager/ — PlatformIO suite directories (copies
-    of canonical sources in 	est/components/; kept in sync manually)
-  - 	est/README updated: documents both pio test -e native and
+  - test/native/test_nvs_config/, test/native/test_app_event/,
+    test/native/test_power_manager/ — PlatformIO suite directories (copies
+    of canonical sources in test/components/; kept in sync manually)
+  - test/README updated: documents both pio test -e native and
     make -f test/Makefile invocation methods
-- Fix: 	est/Makefile SRCS_NVS was missing mock_esp_log_counters.c
+- Fix: test/Makefile SRCS_NVS was missing mock_esp_log_counters.c
   (pre-existing bug exposed by GCC 16 / MinGW-w64 16.1.0)
-- Fix: 	est/mocks/esp_err.h missing trailing newline (GCC 16 warning with -Werror)
+- Fix: test/mocks/esp_err.h missing trailing newline (GCC 16 warning with -Werror)
 
 
 ### Changed

@@ -9,6 +9,7 @@
 #include "power_manager.h"
 #include "nvs_config.h"
 #include "wifi_manager.h"
+#include "status_indicator.h"
 
 static const char *TAG = "main";
 
@@ -46,6 +47,12 @@ void app_main(void)
      * registered. */
     ESP_ERROR_CHECK(power_manager_init());
 
+    /* Initialise the status indicator and set the initial boot state.
+     * The backend (display, LED, or log-only) is determined at compile
+     * time via Kconfig. */
+    ESP_ERROR_CHECK(status_indicator_init());
+    status_indicator_set_state(INDICATOR_STATE_BOOT);
+
     app_config_t cfg = {0};
     ESP_ERROR_CHECK(config_init(&cfg));
 
@@ -58,6 +65,7 @@ void app_main(void)
         esp_err_t cred_ret = wifi_manager_load_credentials(
             ssid, sizeof(ssid), pass, sizeof(pass));
         if (cred_ret == ESP_OK && ssid[0] != '\0') {
+            status_indicator_set_state(INDICATOR_STATE_WIFI_CONNECTING);
             ESP_ERROR_CHECK(wifi_manager_connect(ssid, pass));
         } else {
             ESP_LOGI(TAG, "No WiFi credentials in NVS -- skipping connect");
