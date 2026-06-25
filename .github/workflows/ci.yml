@@ -8,8 +8,16 @@ on:
 
 jobs:
   build:
-    name: PlatformIO Build
+    name: PlatformIO Build — ${{ matrix.env }}
     runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        env:
+          - lilygo-t-display-s3
+          - ai-thinker-esp32-cam
+          - olimex-esp32-poe
 
     steps:
       - uses: actions/checkout@v4
@@ -18,19 +26,19 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.platformio
-          key: ${{ runner.os }}-pio-${{ hashFiles('platformio.ini') }}
+          key: ${{ runner.os }}-pio-${{ matrix.env }}-${{ hashFiles('platformio.ini') }}
           restore-keys: |
-            ${{ runner.os }}-pio-
+            ${{ runner.os }}-pio-${{ matrix.env }}-
 
       - name: Install PlatformIO
         run: pip install platformio
 
       - name: Build firmware
-        run: pio run -e lilygo-t-display-s3
+        run: pio run -e ${{ matrix.env }}
 
       - name: Check for compiler warnings
         run: |
-          pio run -e lilygo-t-display-s3 2>&1 | tee build.log
+          pio run -e ${{ matrix.env }} 2>&1 | tee build.log
           if grep -E "warning:" build.log; then
             echo "::warning::Compiler warnings detected — review build.log"
           fi
@@ -39,10 +47,10 @@ jobs:
         uses: actions/upload-artifact@v4
         if: success()
         with:
-          name: firmware-${{ github.sha }}
+          name: firmware-${{ matrix.env }}-${{ github.sha }}
           path: |
-            .pio/build/lilygo-t-display-s3/firmware.bin
-            .pio/build/lilygo-t-display-s3/firmware.elf
+            .pio/build/${{ matrix.env }}/firmware.bin
+            .pio/build/${{ matrix.env }}/firmware.elf
           retention-days: 7
 
   test:
