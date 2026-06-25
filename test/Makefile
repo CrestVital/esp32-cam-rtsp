@@ -17,7 +17,13 @@ CFLAGS_WIFI_MANAGER = $(CFLAGS_COMMON) \
                       -Wno-address \
                       -Icomponents/wifi_manager/include \
                       -Icomponents/app_event/include \
-                      -DCONFIG_WIFI_MANAGER_ENABLED=1
+                       -DCONFIG_WIFI_MANAGER_ENABLED=1
+
+CFLAGS_STATUS_INDICATOR = $(CFLAGS_COMMON) \
+                          -Icomponents/status_indicator/include \
+                          -DCONFIG_STATUS_INDICATOR_HAS_DISPLAY=0 \
+                          -DCONFIG_STATUS_INDICATOR_LED_PIN=33 \
+                          -DCONFIG_STATUS_INDICATOR_LED_ACTIVE_LOW=1
 
 SRCS_NVS = third-party/unity/unity.c \
            test/mocks/mock_esp_log_counters.c \
@@ -49,14 +55,22 @@ SRCS_WIFI_MANAGER = third-party/unity/unity.c \
                     components/wifi_manager/wifi_manager.c \
                     test/components/wifi_manager/test_wifi_manager.c
 
-.PHONY: all clean test_nvs test_app_event test_power_mgr test_wifi_mgr
+SRCS_STATUS_INDICATOR = third-party/unity/unity.c \
+                        test/mocks/mock_esp_log_counters.c \
+                        test/mocks/mock_freertos_task.c \
+                        components/status_indicator/status_indicator.c \
+                        test/components/status_indicator/test_status_indicator.c
+
+.PHONY: all clean test_nvs test_app_event test_power_mgr test_wifi_mgr \
+        test_status_indicator
 
 all: test_runner_nvs test_runner_app_event test_runner_power_mgr \
-     test_runner_wifi_manager
+     test_runner_wifi_manager test_runner_status_indicator
 	./test_runner_nvs
 	./test_runner_app_event
 	./test_runner_power_mgr
 	./test_runner_wifi_manager
+	./test_runner_status_indicator
 
 test_runner_nvs: $(SRCS_NVS)
 	$(CC) $(CFLAGS_NVS) $(SRCS_NVS) -o test_runner_nvs
@@ -82,6 +96,12 @@ test_runner_wifi_manager: $(SRCS_WIFI_MANAGER)
 test_wifi_mgr: test_runner_wifi_manager
 	./test_runner_wifi_manager
 
+test_runner_status_indicator: $(SRCS_STATUS_INDICATOR)
+	$(CC) $(CFLAGS_STATUS_INDICATOR) $(SRCS_STATUS_INDICATOR) -o test_runner_status_indicator
+
+test_status_indicator: test_runner_status_indicator
+	./test_runner_status_indicator
+
 clean:
 	rm -f test_runner_nvs test_runner_app_event test_runner_power_mgr \
-	      test_runner_wifi_manager
+	      test_runner_wifi_manager test_runner_status_indicator
