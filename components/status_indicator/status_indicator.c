@@ -25,11 +25,15 @@ static inline esp_err_t display_manager_update_status(const display_status_t *s)
     return ESP_OK;
 }
 #  endif
-#else
-#  ifdef ESP_PLATFORM
-#    include "driver/ledc.h"
-#    include "driver/gpio.h"
-#  endif
+#endif
+
+/* LEDC and GPIO headers are only needed on LED path (LED_PIN != -1).
+ * Including them on log-only boards (e.g. Olimex, LED_PIN == -1) is
+ * unnecessary and fails when sdkconfig.defaults has not yet been applied. */
+#if !CONFIG_STATUS_INDICATOR_HAS_DISPLAY && defined(ESP_PLATFORM) \
+    && CONFIG_STATUS_INDICATOR_LED_PIN != -1
+#  include "driver/ledc.h"
+#  include "driver/gpio.h"
 #endif
 
 static const char *TAG = "status_indicator";
