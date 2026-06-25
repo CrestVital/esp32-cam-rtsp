@@ -1,6 +1,6 @@
 # Status — esp32-cam-rtsp
 
-**Last updated:** 2026-06-25
+**Last updated:** 2026-06-26
 **Version:** 0.0.1-dev
 **Active branch:** main
 
@@ -9,18 +9,23 @@
 ## Current State
 
 Infrastructure components merged to main: sys_log, nvs_config (extended
-with network_mode field), app_event, power_manager, wifi_manager. Test
-infrastructure (Unity host tests) in place — 67 tests across 4 suites.
-[env:native] PlatformIO environment ready — host tests runnable via both
-pio test -e native and make -f test/Makefile. Firmware builds verified
-on all three target boards (LilyGo T-Display S3, AI Thinker ESP32-CAM,
-Olimex ESP32-POE). Board header abstraction (boards/) temporarily removed
-pending proper Kconfig-based board selection (ESPCAMFW-45).
+with network_mode field), app_event, power_manager, wifi_manager,
+status_indicator. Test infrastructure (Unity host tests) in place —
+75 tests across 5 suites. [env:native] PlatformIO environment ready —
+host tests runnable via both pio test -e native and make -f test/Makefile.
+Firmware builds verified on all three target boards (LilyGo T-Display S3,
+AI Thinker ESP32-CAM, Olimex ESP32-POE). Board header abstraction (boards/)
+temporarily removed pending proper Kconfig-based board selection (ESPCAMFW-45).
 
 ---
 
 ## What's Done
 
+- **[ESPCAMFW-42]** ✅ status_indicator component — compile-time backend
+  selection (display / LED / log-only) via Kconfig; LEDC PWM blink patterns
+  for 7 states; deterministic FreeRTOS task shutdown via task notification;
+  active-low inversion; per-board sdkconfig.defaults fragments tracked in git;
+  8 Unity host tests; 75 total host tests across 5 suites
 - **[ESPCAMFW-41]** ✅ wifi_manager component — WiFi connection lifecycle
   (init, connect, disconnect, auto-reconnect with exponential backoff),
   NVS credential storage ("wifi_cfg" namespace), APP_EVENT_WIFI_CONNECTED /
