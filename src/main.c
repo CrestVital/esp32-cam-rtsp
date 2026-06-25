@@ -1,3 +1,4 @@
+#include "sdkconfig.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "esp_log.h"
@@ -6,6 +7,8 @@
 #include "sys_log.h"
 #include "app_event.h"
 #include "power_manager.h"
+#include "nvs_config.h"
+#include "wifi_manager.h"
 
 static const char *TAG = "main";
 
@@ -42,6 +45,25 @@ void app_main(void)
      * handler. Must run after the event loop so the handler can be
      * registered. */
     ESP_ERROR_CHECK(power_manager_init());
+
+    app_config_t cfg = {0};
+    ESP_ERROR_CHECK(config_init(&cfg));
+
+#if CONFIG_WIFI_MANAGER_ENABLED
+    if (cfg.network_mode == NETWORK_MODE_WIFI ||
+        cfg.network_mode == NETWORK_MODE_BOTH) {
+        ESP_ERROR_CHECK(wifi_manager_init());
+        char ssid[NVS_CONFIG_STR_MAX_LEN] = {0};
+        char pass[NVS_CONFIG_STR_MAX_LEN] = {0};
+        esp_err_t cred_ret = wifi_manager_load_credentials(
+            ssid, sizeof(ssid), pass, sizeof(pass));
+        if (cred_ret == ESP_OK && ssid[0] != '\0') {
+            ESP_ERROR_CHECK(wifi_manager_connect(ssid, pass));
+        } else {
+            ESP_LOGI(TAG, "No WiFi credentials in NVS -- skipping connect");
+        }
+    }
+#endif
 
     /* Dump chip info, MAC addresses, free heap/PSRAM, and reset reason.
      * Called once at boot — useful as the first line of a crash log. */

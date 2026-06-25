@@ -1,0 +1,9 @@
+menu "WiFi Manager"
+    config WIFI_MANAGER_ENABLED
+        bool "Enable WiFi Manager"
+        default y if SOC_WIFI_SUPPORTED
+        default n
+        help
+            Enable the WiFi manager component. Disable on boards without
+            WiFi hardware (e.g. Olimex ESP32-POE when used in Ethernet-only mode).
+endmenu

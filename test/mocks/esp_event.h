@@ -71,3 +71,9 @@ esp_err_t esp_event_handler_unregister_with(esp_event_loop_handle_t loop,
                                             esp_event_base_t base,
                                             int32_t id,
                                             esp_event_handler_t handler);
+
+/* Default-event-loop variants — used by wifi_manager */
+esp_err_t esp_event_handler_register(esp_event_base_t base, int32_t id,
+                                     esp_event_handler_t handler, void *arg);
+esp_err_t esp_event_handler_unregister(esp_event_base_t base, int32_t id,
+                                       esp_event_handler_t handler);
