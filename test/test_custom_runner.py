@@ -39,6 +39,16 @@ _SUITE_SOURCES = {
         "components/app_event/app_event.c",
         "components/power_manager/power_manager.c",
     ],
+    "test_wifi_manager": [
+        "third-party/unity/unity.c",
+        "test/mocks/mock_esp_event.c",
+        "test/mocks/mock_esp_log_counters.c",
+        "test/mocks/mock_esp_wifi.c",
+        "test/mocks/mock_nvs_state.c",
+        "test/mocks/mock_freertos_task.c",
+        "components/app_event/app_event.c",
+        "components/wifi_manager/wifi_manager.c",
+    ],
 }
 
 # Per-suite include paths (added on top of the common flags in platformio.ini).
@@ -53,6 +63,10 @@ _SUITE_INCLUDES = {
         "components/app_event/include",
         "components/power_manager/include",
         "components/sys_log/include",
+    ],
+    "test_wifi_manager": [
+        "components/wifi_manager/include",
+        "components/app_event/include",
     ],
 }
 

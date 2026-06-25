@@ -6,6 +6,52 @@ Versioning: [Semantic Versioning](https://semver.org/)
 
 ## [Unreleased]
 
+### Added — ESPCAMFW-41
+
+- `wifi_manager` ESP-IDF component — full WiFi connection lifecycle for
+  boards where `CONFIG_WIFI_MANAGER_ENABLED=y`; stub implementation
+  returning `ESP_ERR_NOT_SUPPORTED` on Ethernet-only boards (Olimex)
+- Public API: `wifi_manager_init()`, `wifi_manager_deinit()`,
+  `wifi_manager_connect(ssid, password)`, `wifi_manager_disconnect()`,
+  `wifi_manager_is_connected()`, `wifi_manager_save_credentials()`,
+  `wifi_manager_load_credentials()`
+- Auto-reconnect FreeRTOS task `"wifi_reconnect"` (priority 6, stack 4096 B):
+  exponential backoff 1 s → 2 s → 4 s → 8 s → 16 s → 30 s (cap), 10 attempts
+  max per disconnect episode; counter resets on each new episode
+- `APP_EVENT_WIFI_CONNECTED` posted on `IP_EVENT_STA_GOT_IP`;
+  `APP_EVENT_WIFI_DISCONNECTED` posted on `WIFI_EVENT_STA_DISCONNECTED`
+- NVS credential storage in dedicated namespace `"wifi_cfg"`, keys
+  `"wifi_ssid"` / `"wifi_pass"`; NULL password accepted (open networks)
+- Bluetooth RF guard: `esp_bt_controller_disable()` on ESP32 non-S3 +
+  `CONFIG_BT_CONTROLLER_ENABLED` to release shared RF path for WiFi
+- `components/wifi_manager/Kconfig.projbuild`: `CONFIG_WIFI_MANAGER_ENABLED`
+  bool — `default y if SOC_WIFI_SUPPORTED`; replaces the removed
+  `BOARD_HAS_WIFI` flag from board headers
+- 10 Unity host tests (wifi_manager suite): init, double-init guard, NULL ssid,
+  NULL password (open network), connect sequence, is_connected state, NVS
+  save/load, disconnect-suppresses-reconnect, BT disable on ESP32;
+  total host suite: 67 tests across 4 components, 0 failures
+- `test/mocks/`: new stubs for `esp_wifi`, `esp_bt`, `esp_netif`,
+  `sdkconfig`; extended `freertos/task.h` with FreeRTOS task API stubs;
+  `mock_esp_wifi.c`, `mock_freertos_task.c` with injectable return values
+  and call counters
+- `src/main.c`: conditional `wifi_manager_init()` / `wifi_manager_connect()`
+  call gated on `CONFIG_WIFI_MANAGER_ENABLED` and `cfg.network_mode`
+
+### Changed — ESPCAMFW-41
+
+- `include/board.h` and `boards/` directory removed; the `BOARD_HEADER`
+  macro approach is not viable with PlatformIO + ESP-IDF (`build_flags -D`
+  flags are not propagated into the ESP-IDF ninja build). Will be restored with
+  a Kconfig-based mechanism before `camera_driver` (see ESPCAMFW-45)
+- `src/CMakeLists.txt`: added `power_manager` and `wifi_manager` to
+  `REQUIRES` (`power_manager` was previously missing)
+- `components/wifi_manager/CMakeLists.txt`: added `esp_netif` to `REQUIRES`
+- `platformio.ini`: removed dead `board_build.cmake_extra_args` and
+  `build_flags -DBOARD_HEADER` entries from all three ESP32 environments
+- Test counts: 67 host tests (39 nvs_config + 10 app_event + 8 power_manager +
+  10 wifi_manager), previously 57
+
 ### Added — ESPCAMFW-40
 
 - `nvs_config`: `network_mode_t` enum (`NETWORK_MODE_WIFI = 0`,

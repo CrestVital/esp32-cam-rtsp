@@ -119,3 +119,18 @@ esp_err_t esp_event_handler_unregister_with(esp_event_loop_handle_t loop,
     (void)handler;
     return mock_event_handler_unregister_ret;
 }
+
+/* Default-event-loop variants — forward to the _with equivalents.
+ * wifi_manager registers handlers on the default event loop; these
+ * stubs capture the call but ignore the loop handle. */
+esp_err_t esp_event_handler_register(esp_event_base_t base, int32_t id,
+                                     esp_event_handler_t handler, void *arg)
+{
+    return esp_event_handler_register_with(NULL, base, id, handler, arg);
+}
+
+esp_err_t esp_event_handler_unregister(esp_event_base_t base, int32_t id,
+                                       esp_event_handler_t handler)
+{
+    return esp_event_handler_unregister_with(NULL, base, id, handler);
+}
