@@ -13,3 +13,6 @@
 
 /* Bluetooth controller available on ESP32 classic. */
 #define CONFIG_BT_CONTROLLER_ENABLED   1
+
+/* Board selection for host-side tests: simulate AI Thinker ESP32-CAM. */
+#define CONFIG_BOARD_AI_THINKER_ESP32_CAM  1

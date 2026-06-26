@@ -1,0 +1,31 @@
+menu "Board Selection"
+
+    choice BOARD_TARGET
+        prompt "Target board"
+        default BOARD_LILYGO_T_DISPLAY_S3
+        help
+            Select the hardware board. This choice sets all board-specific
+            capability flags and camera pin assignments.
+
+        config BOARD_LILYGO_T_DISPLAY_S3
+            bool "LilyGo T-Display S3 (ESP32-S3, OV5640, WiFi, 8 MB OPI PSRAM, ST7789 display)"
+
+        config BOARD_AI_THINKER_ESP32_CAM
+            bool "AI Thinker ESP32-CAM (ESP32, OV2640, WiFi, 4 MB PSRAM)"
+
+        config BOARD_OLIMEX_ESP32_POE
+            bool "Olimex ESP32-POE (ESP32, OV2640, Ethernet only, no PSRAM)"
+
+    endchoice
+
+    config BOARD_HAS_WIFI
+        bool
+        default y if BOARD_LILYGO_T_DISPLAY_S3 || BOARD_AI_THINKER_ESP32_CAM
+        default n
+
+    config BOARD_HAS_ETHERNET
+        bool
+        default y if BOARD_OLIMEX_ESP32_POE
+        default n
+
+endmenu
