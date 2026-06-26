@@ -6,6 +6,36 @@ Versioning: [Semantic Versioning](https://semver.org/)
 
 ## [Unreleased]
 
+### Added — ESPCAMFW-45
+
+- `components/board_config/` — new ESP-IDF component (no SRCS) providing
+  `Kconfig.projbuild` with `choice BOARD_TARGET`: `BOARD_LILYGO_T_DISPLAY_S3` /
+  `BOARD_AI_THINKER_ESP32_CAM` / `BOARD_OLIMEX_ESP32_POE`; derived invisible
+  bools `BOARD_HAS_WIFI` and `BOARD_HAS_ETHERNET` outside the choice block
+- `include/board.h` restored as a pure compile-time macro generator keyed on
+  `CONFIG_BOARD_*` (no computed `#include`); defines per board:
+  `BOARD_HAS_WIFI`, `BOARD_HAS_ETHERNET`, `BOARD_HAS_DISPLAY`,
+  `BOARD_PSRAM_SIZE_MB`, `BOARD_SENSOR_OV5640/OV2640`, and all 16
+  `BOARD_CAM_PIN_*` constants; `#error` fallback if no board is selected
+
+### Changed — ESPCAMFW-45
+
+- `sdkconfig.defaults.lilygo-t-display-s3`: `CONFIG_BOARD_LILYGO_T_DISPLAY_S3=y`
+  appended; existing `STATUS_INDICATOR_*` entries preserved
+- `sdkconfig.defaults.ai-thinker-esp32-cam`: `CONFIG_BOARD_AI_THINKER_ESP32_CAM=y`
+  appended; existing entries preserved
+- `sdkconfig.defaults.olimex-esp32-poe`: `CONFIG_BOARD_OLIMEX_ESP32_POE=y`
+  appended; existing entries preserved
+- `components/wifi_manager/Kconfig.projbuild`: `WIFI_MANAGER_ENABLED` default
+  changed from `SOC_WIFI_SUPPORTED` to `BOARD_HAS_WIFI` for consistency with
+  the new board abstraction layer
+- `src/CMakeLists.txt`: `board_config` added to `REQUIRES`
+- `test/mocks/sdkconfig.h`: `CONFIG_BOARD_AI_THINKER_ESP32_CAM=1` added
+  (simulates AI Thinker for host builds, consistent with existing
+  `CONFIG_IDF_TARGET_ESP32=1`)
+- `test/Makefile`: `-DCONFIG_BOARD_AI_THINKER_ESP32_CAM=1` added to
+  `CFLAGS_WIFI_MANAGER`
+
 ### Added — ESPCAMFW-42
 
 - `status_indicator` ESP-IDF component — single entry-point for device status

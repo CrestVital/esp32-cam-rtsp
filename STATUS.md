@@ -14,13 +14,20 @@ status_indicator. Test infrastructure (Unity host tests) in place —
 75 tests across 5 suites. [env:native] PlatformIO environment ready —
 host tests runnable via both pio test -e native and make -f test/Makefile.
 Firmware builds verified on all three target boards (LilyGo T-Display S3,
-AI Thinker ESP32-CAM, Olimex ESP32-POE). Board header abstraction (boards/)
-temporarily removed pending proper Kconfig-based board selection (ESPCAMFW-45).
+AI Thinker ESP32-CAM, Olimex ESP32-POE). Board selection implemented via
+Kconfig choice BOARD_TARGET in new board_config component; include/board.h
+restored with full pin assignments for all three target boards (ESPCAMFW-45).
 
 ---
 
 ## What's Done
 
+- **[ESPCAMFW-45]** ✅ Kconfig-based board selection — `board_config` component
+  with `choice BOARD_TARGET` (LilyGo / AI Thinker / Olimex); `include/board.h`
+  restored as compile-time macro generator for `BOARD_HAS_*`, `BOARD_PSRAM_SIZE_MB`,
+  `BOARD_SENSOR_OV*`, `BOARD_CAM_PIN_*`; `WIFI_MANAGER_ENABLED` default migrated
+  from `SOC_WIFI_SUPPORTED` to `BOARD_HAS_WIFI`; all 3 firmware builds verified;
+  75 host tests, 0 failures
 - **[ESPCAMFW-42]** ✅ status_indicator component — compile-time backend
   selection (display / LED / log-only) via Kconfig; LEDC PWM blink patterns
   for 7 states; deterministic FreeRTOS task shutdown via task notification;
@@ -80,9 +87,6 @@ temporarily removed pending proper Kconfig-based board selection (ESPCAMFW-45).
 - **[ESPCAMFW-44]** 🔴 High — wifi_manager s_reconnect_task race condition:
   s_reconnect_task written from event loop task and read from deinit without
   synchronisation; needs mutex or cooperative shutdown via task notification
-- **[ESPCAMFW-45]** 🟡 Medium — Kconfig-based board selection: restore
-  boards/ and include/board.h with CONFIG_BOARD_* choice + sdkconfig.defaults
-  fragments; required before camera_driver implementation
 
 ---
 
@@ -91,14 +95,11 @@ temporarily removed pending proper Kconfig-based board selection (ESPCAMFW-45).
 - OTA trigger protocol — HTTPS push from edge vs pull on schedule — TBD
 - Target frame rate and resolution — confirmation needed from edge pipeline team
 - Number of concurrent RTSP clients required for MVP
-- LilyGo T-Display S3 and Olimex ESP32-POE camera pin assignments require
-  hardware verification before camera_driver (ESPCAMFW-45)
 
 ---
 
 ## Next Up
 
-- **[ESPCAMFW-45]** Kconfig-based board selection (prerequisite for camera_driver)
 - **[ESPCAMFW-26/27]** camera_driver component — DVP HAL, PSRAM frame buffer pool,
   OV2640 and OV5640 sensor support
 - **[ESPCAMFW-??]** rtsp_server component — RTSP/RTP stack, RFC 2435 MJPEG packetiser
