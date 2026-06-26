@@ -131,10 +131,11 @@ void test_save_credentials_writes_to_nvs(void)
     esp_err_t ret = wifi_manager_save_credentials(test_ssid, test_pass);
     TEST_ASSERT_EQUAL(ESP_OK, ret);
 
+    /* Verify the write was directed to the "wifi_cfg" namespace. */
+    TEST_ASSERT_EQUAL_STRING("wifi_cfg", mock_nvs_get_last_write_ns());
+
     /* Verify that both NVS keys were written by reading them back
-     * through the mock NVS layer in the "wifi_cfg" namespace.
-     * Note: wifi_manager uses raw NVS API, so the keys are stored
-     * in the global mock store (which is namespace-agnostic). */
+     * through the mock NVS layer in the "wifi_cfg" namespace. */
     char buf_ssid[64] = {0};
     char buf_pass[64] = {0};
     size_t len_ssid = sizeof(buf_ssid);
