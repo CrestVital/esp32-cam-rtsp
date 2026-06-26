@@ -21,6 +21,20 @@ void mock_nvs_set_u16(const char *key, uint16_t value);
 void mock_nvs_set_str_val(const char *key, const char *value);
 void mock_nvs_set_key_error(const char *key, esp_err_t err);
 
+/* Namespace-aware inspection helpers.
+ *
+ * mock_nvs_set_str_val_ns() stores a string under an exact (namespace,
+ * key) pair so that only readers of that namespace can find it. Unlike
+ * mock_nvs_set_str_val(), which uses the wildcard "*" namespace and is
+ * visible to any reader via fallback.
+ *
+ * mock_nvs_get_last_write_ns() returns the namespace that received the
+ * last write performed through a real NVS handle (nvs_set_* stubs). It
+ * returns "" when no writes have occurred since the last reset. */
+void        mock_nvs_set_str_val_ns(const char *ns, const char *key,
+                                     const char *value);
+const char *mock_nvs_get_last_write_ns(void);
+
 /* NVS API stubs — mirror the real ESP-IDF NVS function signatures.
  * Implementation lives in mock_nvs_state.c; these allow components to
  * link against a fake NVS layer in host-based unit tests. */

@@ -22,6 +22,14 @@ restored with full pin assignments for all three target boards (ESPCAMFW-45).
 
 ## What's Done
 
+- **[ESPCAMFW-43]** ✅ NVS mock namespace isolation -- handle table maps each
+  nvs_open() call to a namespace; nvs_get_*/nvs_set_* scoped per handle;
+  wildcard "*" fallback preserves all 39 nvs_config tests unchanged;
+  s_last_write_ns tracks SUT write namespace (updated only on successful
+  allocation; returns ESP_ERR_NO_MEM on overflow); new
+  mock_nvs_set_str_val_ns() and mock_nvs_get_last_write_ns() helpers;
+  test_save_credentials_writes_to_nvs now verifies "wifi_cfg" namespace
+  explicitly; 75 host tests, 0 failures
 - **[ESPCAMFW-45]** ✅ Kconfig-based board selection — `board_config` component
   with `choice BOARD_TARGET` (LilyGo / AI Thinker / Olimex); `include/board.h`
   restored as compile-time macro generator for `BOARD_HAS_*`, `BOARD_PSRAM_SIZE_MB`,
@@ -81,9 +89,6 @@ restored with full pin assignments for all three target boards (ESPCAMFW-45).
 
 ## Open Tickets (spin-offs)
 
-- **[ESPCAMFW-43]** 🟡 Medium — NVS mock namespace-awareness: current mock
-  does not isolate keys by namespace; test_save_credentials_writes_to_nvs
-  cannot verify "wifi_cfg" namespace specifically
 - **[ESPCAMFW-44]** 🔴 High — wifi_manager s_reconnect_task race condition:
   s_reconnect_task written from event loop task and read from deinit without
   synchronisation; needs mutex or cooperative shutdown via task notification

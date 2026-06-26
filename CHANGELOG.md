@@ -6,6 +6,34 @@ Versioning: [Semantic Versioning](https://semver.org/)
 
 ## [Unreleased]
 
+### Added — ESPCAMFW-43
+
+- `test/mocks/mock_nvs_state.c`: namespace isolation for mock NVS --
+  handle table `s_handles[MOCK_MAX_HANDLES]` maps each `nvs_open()` call
+  to a namespace string; `nvs_get_*` / `nvs_set_*` stubs resolve namespace
+  from handle before every operation
+- `find_ns()` lookup: exact `(namespace, key)` match first, wildcard
+  `("*", key)` fallback second -- preserves all 39 nvs_config tests without
+  source modification
+- Legacy helpers (`mock_nvs_set_u8/i8/u16/str_val/key_error`) store under
+  wildcard namespace `"*"`; SUT writes go under the exact resolved namespace
+- `s_last_write_ns`: tracks namespace of the most recent `nvs_set_*` call
+  from the SUT; updated only after successful entry allocation --
+  `nvs_set_*` now returns `ESP_ERR_NO_MEM` on table overflow instead of
+  false `ESP_OK`
+- New public helpers in `test/mocks/nvs.h`:
+  `mock_nvs_set_str_val_ns(ns, key, value)` and
+  `mock_nvs_get_last_write_ns()`
+- `test_save_credentials_writes_to_nvs` updated in both
+  `test/components/wifi_manager/` and `test/native/test_wifi_manager/`:
+  asserts `mock_nvs_get_last_write_ns() == "wifi_cfg"` and verifies
+  read-back via a `"wifi_cfg"`-scoped handle
+- Removed unused `#include <stdio.h>` / `<stdlib.h>` from
+  `mock_nvs_state.c`; decorative box-drawing separators replaced with
+  plain comment headers
+- Host test suite: 75 tests, 0 failures (count unchanged -- this ticket
+  modifies infrastructure, not test count)
+
 ### Added — ESPCAMFW-45
 
 - `components/board_config/` — new ESP-IDF component (no SRCS) providing
