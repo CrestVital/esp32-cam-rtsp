@@ -1,7 +1,7 @@
 menu "WiFi Manager"
     config WIFI_MANAGER_ENABLED
         bool "Enable WiFi Manager"
-        default y if SOC_WIFI_SUPPORTED
+        default y if BOARD_HAS_WIFI
         default n
         help
             Enable the WiFi manager component. Disable on boards without
