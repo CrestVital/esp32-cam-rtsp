@@ -104,4 +104,24 @@ esp_err_t wifi_manager_load_credentials(char *ssid, size_t ssid_len,
  * Not compiled in production builds.
  */
 TaskHandle_t *wifi_manager_get_reconnect_task_ptr(void);
-#endif
+
+/**
+ * @brief Test-only: return s_reconnect_generation for verification.
+ * Not compiled in production builds.
+ *
+ * @return Current value of s_reconnect_generation.
+ */
+uint32_t wifi_manager_get_reconnect_generation(void);
+
+/**
+ * @brief Test-only: invoke the orphan-guard logic directly.
+ *
+ * Calls reconnect_should_clear_handle(captured_gen) and returns the result.
+ * Allows host tests to verify the guard branch without running the
+ * FreeRTOS task. Not compiled in production builds.
+ *
+ * @param captured_gen Generation value captured at hypothetical task creation.
+ * @return true if the task should clear s_reconnect_task, false if orphaned.
+ */
+bool wifi_manager_reconnect_should_clear_handle_test(uint32_t captured_gen);
+#endif /* UNIT_TEST */
