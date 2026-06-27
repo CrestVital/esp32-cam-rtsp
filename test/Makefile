@@ -18,7 +18,8 @@ CFLAGS_WIFI_MANAGER = $(CFLAGS_COMMON) \
                       -Icomponents/wifi_manager/include \
                       -Icomponents/app_event/include \
                       -DCONFIG_WIFI_MANAGER_ENABLED=1 \
-                      -DCONFIG_BOARD_AI_THINKER_ESP32_CAM=1
+                      -DCONFIG_BOARD_AI_THINKER_ESP32_CAM=1 \
+                      -DUNIT_TEST=1
 
 CFLAGS_STATUS_INDICATOR = $(CFLAGS_COMMON) \
                           -Icomponents/status_indicator/include \

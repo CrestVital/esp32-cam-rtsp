@@ -23,3 +23,7 @@ void       vTaskDelay(TickType_t ticks);
 static inline TaskHandle_t xTaskGetCurrentTaskHandle(void) { return (TaskHandle_t)0xBEEF0002; }
 uint32_t ulTaskNotifyTake(BaseType_t clear_on_exit, TickType_t timeout);
 BaseType_t xTaskNotifyGive(TaskHandle_t handle);
+
+/* Test injection API — host tests only */
+void mock_set_reconnect_task_handle(TaskHandle_t *task_ptr, TaskHandle_t value);
+void mock_clear_injected_task_handle(void);

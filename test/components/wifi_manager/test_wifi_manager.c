@@ -28,16 +28,27 @@ extern int mock_esp_event_handler_register_calls;
 
 extern int mock_esp_bt_controller_disable_calls;
 
+extern int mock_vTaskDelete_calls;
+
+/* ── Extern mock injection helpers ──────────────────────────────────── */
+
+void mock_set_reconnect_task_handle(TaskHandle_t *task_ptr, TaskHandle_t value);
+void mock_clear_injected_task_handle(void);
+
 /* ── setUp / tearDown ───────────────────────────────────────────────── */
+
+void mock_freertos_task_reset(void);
 
 void setUp(void)
 {
     /* Reset all mock state so each test starts with a clean,
      * deterministic environment. Deinit the WiFi manager to tear
-     * down any state left by the previous test. */
+     * down any state left by the previous test. Reset the vTaskDelete
+     * call counter so the new race-condition test starts from 0. */
     mock_esp_wifi_reset();
     mock_nvs_reset();
     mock_esp_log_reset();
+    mock_freertos_task_reset();
 
     /* Best-effort deinit — ignore return value; the point is to
      * clear s_initialized and s_connected. */
@@ -225,6 +236,118 @@ void test_connect_null_password_open_network(void)
     TEST_ASSERT_EQUAL(1, mock_esp_wifi_set_config_calls);
 }
 
+void test_deinit_waits_for_reconnect_task_exit(void)
+{
+    /* Verify that wifi_manager_deinit() does not call vTaskDelete on an
+     * external handle. The reconnect task never actually runs in host
+     * tests (ulTaskNotifyTake returns 0 immediately and the mock task is
+     * never scheduled), so mock_vTaskDelete_calls must remain 0
+     * throughout.
+     *
+     * After deinit, all internal state must be reset: a second
+     * wifi_manager_init() must succeed, proving no stale s_initialized
+     * or s_reconnect_mutex prevents re-initialisation. */
+
+    esp_err_t ret = wifi_manager_init();
+    TEST_ASSERT_EQUAL(ESP_OK, ret);
+
+    ret = wifi_manager_connect("TestSSID", "pass");
+    TEST_ASSERT_EQUAL(ESP_OK, ret);
+
+    int vdelete_before = mock_vTaskDelete_calls;
+
+    ret = wifi_manager_deinit();
+    TEST_ASSERT_EQUAL(ESP_OK, ret);
+
+    /* deinit must NOT call vTaskDelete with an external handle. */
+    TEST_ASSERT_EQUAL(vdelete_before, mock_vTaskDelete_calls);
+
+    /* All internal state must be fully reset for a fresh init to
+     * succeed. */
+    mock_esp_wifi_reset();
+    mock_nvs_reset();
+    mock_freertos_task_reset();
+    ret = wifi_manager_init();
+    TEST_ASSERT_EQUAL(ESP_OK, ret);
+
+    TEST_ASSERT_FALSE(wifi_manager_is_connected());
+
+    /* Clean up for the next test. */
+    (void)wifi_manager_deinit();
+}
+
+void test_deinit_cooperative_shutdown_with_injected_task(void)
+{
+    /* Inject a non-NULL sentinel handle into s_reconnect_task so that
+     * deinit() actually exercises the notify-and-poll path. Then null
+     * the handle (simulating the task self-deleting) and verify deinit
+     * completes without calling external vTaskDelete. */
+
+    esp_err_t ret = wifi_manager_init();
+    TEST_ASSERT_EQUAL(ESP_OK, ret);
+
+    /* Plant sentinel handle — simulates a running reconnect task. */
+    TaskHandle_t *task_ptr = wifi_manager_get_reconnect_task_ptr();
+    mock_set_reconnect_task_handle(task_ptr, (TaskHandle_t)0xDEAD0001);
+
+    /* Immediately clear the handle so the poll loop exits on the first
+     * iteration (simulates the task having nulled itself under mutex). */
+    mock_clear_injected_task_handle();
+
+    int vdelete_before = mock_vTaskDelete_calls;
+
+    ret = wifi_manager_deinit();
+    TEST_ASSERT_EQUAL(ESP_OK, ret);
+
+    /* deinit must NOT call vTaskDelete externally. */
+    TEST_ASSERT_EQUAL(vdelete_before, mock_vTaskDelete_calls);
+
+    /* Re-init must succeed — all state was fully reset. */
+    mock_esp_wifi_reset();
+    mock_nvs_reset();
+    mock_freertos_task_reset();
+    ret = wifi_manager_init();
+    TEST_ASSERT_EQUAL(ESP_OK, ret);
+
+    TEST_ASSERT_FALSE(wifi_manager_is_connected());
+    (void)wifi_manager_deinit();
+}
+
+void test_deinit_timeout_path_clears_stale_handle(void)
+{
+    /* Simulate the timeout path: inject a handle but do NOT clear it,
+     * so the poll loop exhausts all 50 iterations. After deinit, the
+     * handle must be NULL (force-cleared by Fix 1) so a subsequent
+     * init + event-handler call does not notify a stale handle. */
+
+    esp_err_t ret = wifi_manager_init();
+    TEST_ASSERT_EQUAL(ESP_OK, ret);
+
+    /* Plant a handle that is never cleared — simulates a stuck task. */
+    TaskHandle_t *task_ptr = wifi_manager_get_reconnect_task_ptr();
+    mock_set_reconnect_task_handle(task_ptr, (TaskHandle_t)0xDEAD0002);
+
+    /* deinit should still return ESP_OK (timeout is non-fatal). */
+    ret = wifi_manager_deinit();
+    TEST_ASSERT_EQUAL(ESP_OK, ret);
+
+    /* The handle must be NULL after deinit — Fix 1 force-clears it. */
+    TEST_ASSERT_NULL(*task_ptr);
+
+    /* vTaskDelete must NOT have been called externally. */
+    /* Note: mock_vTaskDelete_calls was reset in setUp(); any call here
+     * would be an external delete — there must be none. */
+    TEST_ASSERT_EQUAL(0, mock_vTaskDelete_calls);
+
+    /* Re-init must succeed. */
+    mock_esp_wifi_reset();
+    mock_nvs_reset();
+    mock_freertos_task_reset();
+    ret = wifi_manager_init();
+    TEST_ASSERT_EQUAL(ESP_OK, ret);
+    (void)wifi_manager_deinit();
+}
+
 /* ── Test runner main ───────────────────────────────────────────────── */
 
 int main(void)
@@ -241,6 +364,9 @@ int main(void)
     RUN_TEST(test_disconnect_suppresses_reconnect);
     RUN_TEST(test_init_calls_bt_disable_on_esp32);
     RUN_TEST(test_connect_null_password_open_network);
+    RUN_TEST(test_deinit_waits_for_reconnect_task_exit);
+    RUN_TEST(test_deinit_cooperative_shutdown_with_injected_task);
+    RUN_TEST(test_deinit_timeout_path_clears_stale_handle);
 
     return UNITY_END();
 }
