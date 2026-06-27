@@ -46,12 +46,40 @@ static char  s_target_ssid[WIFI_SSID_BUF_LEN];
 static char  s_target_pass[WIFI_PASS_BUF_LEN];
 static int   s_attempt_count = 0;
 
+/* Generation counter incremented on every wifi_manager_init(). Used by
+ * reconnect_task() to detect whether it has been orphaned by a deinit
+ * timeout followed by a new init cycle, so it can skip the
+ * s_reconnect_task = NULL write that would overwrite the new task's
+ * handle and cause a kernel panic on ESP32-S3.
+ *
+ * uint32_t wraparound (~4e9 init cycles) is safe: the == comparison
+ * remains correct modulo 2^32, and no realistic device lifetime
+ * approaches the wraparound point. */
+static uint32_t s_reconnect_generation = 0;
+
+static bool reconnect_should_clear_handle(uint32_t captured_generation);
+
 #if defined(UNIT_TEST)
-/* Expose the address of s_reconnect_task for host-test injection only.
- * Never call this from production code. */
 TaskHandle_t *wifi_manager_get_reconnect_task_ptr(void)
 {
+    /* Return the address of s_reconnect_task for host-test injection.
+     * Never call this from production code. */
     return &s_reconnect_task;
+}
+
+uint32_t wifi_manager_get_reconnect_generation(void)
+{
+    /* Return s_reconnect_generation for host-test verification only.
+     * Never call this from production code. */
+    return s_reconnect_generation;
+}
+
+bool wifi_manager_reconnect_should_clear_handle_test(uint32_t captured_gen)
+{
+    /* Thin wrapper around reconnect_should_clear_handle() for direct
+     * invocation from host tests without running reconnect_task().
+     * Never call this from production code. */
+    return reconnect_should_clear_handle(captured_gen);
 }
 #endif /* UNIT_TEST */
 
@@ -112,7 +140,8 @@ static void wifi_event_handler(void *arg, esp_event_base_t base,
                         s_attempt_count = 0;
                         BaseType_t created = xTaskCreate(
                             reconnect_task, WIFI_RECONNECT_TASK_NAME,
-                            WIFI_RECONNECT_TASK_STACK, NULL,
+                            WIFI_RECONNECT_TASK_STACK,
+                            (void *)(uintptr_t)s_reconnect_generation,
                             WIFI_RECONNECT_TASK_PRIORITY,
                             &s_reconnect_task);
                         if (created != pdPASS) {
@@ -140,6 +169,20 @@ static void wifi_event_handler(void *arg, esp_event_base_t base,
     }
 }
 
+/* Determine whether a reconnect task with the given captured generation
+ * should clear s_reconnect_task. Returns true if the generation matches
+ * the current counter (task is not orphaned), false if the generation has
+ * advanced (task is orphaned and must exit silently).
+ *
+ * Extracted from the cleanup section of reconnect_task() so that the
+ * guard logic can be called directly from host tests, where FreeRTOS
+ * tasks cannot run under the native scheduler. Must be called under
+ * s_reconnect_mutex. */
+static bool reconnect_should_clear_handle(uint32_t captured_generation)
+{
+    return (s_reconnect_generation == captured_generation);
+}
+
 static void reconnect_task(void *param)
 {
     /* Exponential-backoff reconnect loop.
@@ -150,7 +193,13 @@ static void reconnect_task(void *param)
      * Terminates when s_reconnect_enabled is cleared or when the attempt
      * counter reaches WIFI_RECONNECT_MAX_ATTEMPTS. */
 
-    (void)param;
+    /* Retrieve the generation captured at task creation time (passed via
+     * param under s_reconnect_mutex in wifi_event_handler). Using param
+     * rather than reading s_reconnect_generation directly eliminates a
+     * scheduler-dependent window: if deinit-timeout + new init() occurred
+     * between xTaskCreate and the first instruction of this function, the
+     * direct read would capture the new (wrong) generation. */
+    uint32_t my_generation = (uint32_t)(uintptr_t)param;
 
     while (s_reconnect_enabled && s_attempt_count < WIFI_RECONNECT_MAX_ATTEMPTS) {
         /* Compute backoff: 1s, 2s, 4s, 8s, 16s, capped at 30s.
@@ -193,7 +242,19 @@ static void reconnect_task(void *param)
      * been freed, causing a FreeRTOS kernel panic on ESP32-S3. */
     if (s_reconnect_mutex != NULL &&
         xSemaphoreTake(s_reconnect_mutex, portMAX_DELAY) == pdTRUE) {
-        s_reconnect_task = NULL;
+        /* Use the helper so the guard logic is testable independently of
+         * the FreeRTOS scheduler. */
+        if (reconnect_should_clear_handle(my_generation)) {
+            s_reconnect_task = NULL;
+        } else {
+            /* Log both the captured and the current generation to aid
+             * diagnosis of init-cycle races. */
+            ESP_LOGW(TAG,
+                "Orphaned reconnect task (gen %lu, current %lu) exiting"
+                " silently",
+                (unsigned long)my_generation,
+                (unsigned long)s_reconnect_generation);
+        }
         xSemaphoreGive(s_reconnect_mutex);
     }
     vTaskDelete(NULL);
@@ -222,6 +283,10 @@ esp_err_t wifi_manager_init(void)
     s_attempt_count     = 0;
     s_reconnect_enabled = false;
     s_connected         = false;
+    /* Advance the generation counter so any task orphaned by a previous
+     * deinit timeout will detect the mismatch and exit without
+     * overwriting the new task's handle. */
+    s_reconnect_generation++;
 
     /* Initialise LwIP netif layer and create the default station netif.
      * Must happen before esp_wifi_init(). */

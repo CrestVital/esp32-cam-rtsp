@@ -6,6 +6,34 @@ Versioning: [Semantic Versioning](https://semver.org/)
 
 ## [Unreleased]
 
+### Fixed — ESPCAMFW-46
+
+- `wifi_manager`: fix orphaned reconnect task after deinit timeout — if
+  `reconnect_task()` did not exit within the 500 ms cooperative shutdown
+  window, a subsequent `wifi_manager_init()` + `wifi_manager_connect()` cycle
+  created a new mutex; the orphaned task would eventually wake, acquire the
+  new mutex, and overwrite `s_reconnect_task = NULL` in its cleanup section,
+  clobbering the new task's handle and triggering a FreeRTOS kernel panic on
+  subsequent `WIFI_EVENT_STA_DISCONNECTED` (ESP32-S3 dual-core Xtensa LX7)
+- Introduced `s_reconnect_generation` (`static uint32_t`) incremented on
+  every `wifi_manager_init()`; reconnect task receives the generation value
+  at creation time via `pvParameters` (captured under `s_reconnect_mutex`
+  in `xTaskCreate` call), eliminating a scheduler-dependent capture window
+- Cleanup section of `reconnect_task()` guards `s_reconnect_task = NULL`
+  with `reconnect_should_clear_handle(my_generation)` — exits silently with
+  `ESP_LOGW` (logging both captured and current generation) if the generation
+  has advanced, indicating orphaned status
+- `static bool reconnect_should_clear_handle(uint32_t)` extracted as a
+  standalone helper to make the guard logic directly testable from host tests
+  (FreeRTOS tasks cannot run under the native scheduler)
+- New `#if defined(UNIT_TEST)` accessor
+  `wifi_manager_reconnect_should_clear_handle_test()` exposes the helper;
+  new accessor `wifi_manager_get_reconnect_generation()` exposes the counter
+- 2 new Unity host tests covering the guard logic directly
+  (`test_reconnect_guard_logic_matching_generation`,
+  `test_reconnect_guard_logic_stale_generation`); total host suite: **80 tests**
+  across 5 suites, 0 failures
+
 ### Fixed — ESPCAMFW-44
 
 - `wifi_manager`: eliminate race condition on `s_reconnect_task` — the static

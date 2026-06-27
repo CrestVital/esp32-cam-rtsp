@@ -348,6 +348,120 @@ void test_deinit_timeout_path_clears_stale_handle(void)
     (void)wifi_manager_deinit();
 }
 
+void test_init_increments_generation(void)
+{
+    /* Each wifi_manager_init() must increment s_reconnect_generation so
+     * that an orphaned task from a previous deinit-timeout cycle sees a
+     * changed generation and skips the s_reconnect_task = NULL write. */
+
+    uint32_t gen0 = wifi_manager_get_reconnect_generation();
+
+    esp_err_t ret = wifi_manager_init();
+    TEST_ASSERT_EQUAL(ESP_OK, ret);
+
+    uint32_t gen1 = wifi_manager_get_reconnect_generation();
+    TEST_ASSERT_GREATER_THAN(gen0, gen1);
+
+    (void)wifi_manager_deinit();
+
+    /* A second init cycle must increment again. */
+    mock_esp_wifi_reset();
+    mock_nvs_reset();
+    mock_freertos_task_reset();
+
+    ret = wifi_manager_init();
+    TEST_ASSERT_EQUAL(ESP_OK, ret);
+
+    uint32_t gen2 = wifi_manager_get_reconnect_generation();
+    TEST_ASSERT_GREATER_THAN(gen1, gen2);
+
+    (void)wifi_manager_deinit();
+}
+
+void test_orphaned_task_generation_guard(void)
+{
+    /* Simulate the orphan scenario precondition:
+     * Cycle 1: init, inject a stuck task handle, deinit via timeout path.
+     * Cycle 2: fresh init — verify the generation has advanced.
+     *
+     * The reconnect_task() function cannot run under the host scheduler,
+     * so this test validates the precondition: after a deinit timeout the
+     * generation is advanced, meaning the orphaned task would see a
+     * mismatched generation and skip s_reconnect_task = NULL. */
+
+    /* Cycle 1: init + inject + deinit with timeout (handle not cleared). */
+    esp_err_t ret = wifi_manager_init();
+    TEST_ASSERT_EQUAL(ESP_OK, ret);
+
+    uint32_t gen1 = wifi_manager_get_reconnect_generation();
+
+    TaskHandle_t *task_ptr = wifi_manager_get_reconnect_task_ptr();
+    mock_set_reconnect_task_handle(task_ptr, (TaskHandle_t)0xDEAD0010);
+    /* Do NOT call mock_clear_injected_task_handle — simulates stuck task. */
+
+    ret = wifi_manager_deinit();
+    TEST_ASSERT_EQUAL(ESP_OK, ret);
+
+    /* Cycle 2: fresh init — generation must have advanced. */
+    mock_esp_wifi_reset();
+    mock_nvs_reset();
+    mock_freertos_task_reset();
+
+    ret = wifi_manager_init();
+    TEST_ASSERT_EQUAL(ESP_OK, ret);
+
+    uint32_t gen2 = wifi_manager_get_reconnect_generation();
+    /* Orphan from cycle 1 captured gen1; gen2 > gen1 means it would skip
+     * the s_reconnect_task = NULL write. */
+    TEST_ASSERT_GREATER_THAN(gen1, gen2);
+
+    /* s_reconnect_task was reset by init(); verify it is NULL. */
+    TEST_ASSERT_NULL(*wifi_manager_get_reconnect_task_ptr());
+
+    (void)wifi_manager_deinit();
+}
+
+void test_reconnect_guard_logic_matching_generation(void)
+{
+    /* Verify that reconnect_should_clear_handle() returns true when the
+     * captured generation matches the current counter — i.e. the task is
+     * the current-generation task and must clear s_reconnect_task. */
+
+    esp_err_t ret = wifi_manager_init();
+    TEST_ASSERT_EQUAL(ESP_OK, ret);
+
+    uint32_t current_gen = wifi_manager_get_reconnect_generation();
+
+    /* Same generation: guard must permit the clear. */
+    TEST_ASSERT_TRUE(
+        wifi_manager_reconnect_should_clear_handle_test(current_gen));
+
+    (void)wifi_manager_deinit();
+}
+
+void test_reconnect_guard_logic_stale_generation(void)
+{
+    /* Verify that reconnect_should_clear_handle() returns false when the
+     * captured generation is older than the current counter — i.e. the
+     * task is orphaned and must NOT clear s_reconnect_task. */
+
+    esp_err_t ret = wifi_manager_init();
+    TEST_ASSERT_EQUAL(ESP_OK, ret);
+
+    uint32_t current_gen = wifi_manager_get_reconnect_generation();
+
+    /* Simulate init() advancing the counter (as after a deinit-timeout
+     * + new init cycle). A captured generation one behind the current
+     * value represents an orphaned task. */
+    uint32_t stale_gen = current_gen - 1;
+
+    /* Stale generation: guard must prevent the clear. */
+    TEST_ASSERT_FALSE(
+        wifi_manager_reconnect_should_clear_handle_test(stale_gen));
+
+    (void)wifi_manager_deinit();
+}
+
 /* ── Test runner main ───────────────────────────────────────────────── */
 
 int main(void)
@@ -367,6 +481,10 @@ int main(void)
     RUN_TEST(test_deinit_waits_for_reconnect_task_exit);
     RUN_TEST(test_deinit_cooperative_shutdown_with_injected_task);
     RUN_TEST(test_deinit_timeout_path_clears_stale_handle);
+    RUN_TEST(test_init_increments_generation);
+    RUN_TEST(test_orphaned_task_generation_guard);
+    RUN_TEST(test_reconnect_guard_logic_matching_generation);
+    RUN_TEST(test_reconnect_guard_logic_stale_generation);
 
     return UNITY_END();
 }
