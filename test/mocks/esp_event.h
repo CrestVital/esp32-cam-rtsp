@@ -24,7 +24,9 @@ typedef struct {
 #define ESP_EVENT_ANY_BASE  NULL
 #define ESP_EVENT_ANY_ID    (-1)
 #define tskNO_AFFINITY      (-1)
+#ifndef portMAX_DELAY
 #define portMAX_DELAY       0xFFFFFFFFUL
+#endif
 
 /* Macro expansions matching ESP-IDF behaviour */
 #define ESP_EVENT_DECLARE_BASE(id)  extern esp_event_base_t const id

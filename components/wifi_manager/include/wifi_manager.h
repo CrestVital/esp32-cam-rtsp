@@ -95,3 +95,13 @@ esp_err_t wifi_manager_save_credentials(const char *ssid, const char *password);
  */
 esp_err_t wifi_manager_load_credentials(char *ssid, size_t ssid_len,
                                          char *password, size_t pass_len);
+
+#if defined(UNIT_TEST)
+#include "freertos/FreeRTOS.h"
+
+/**
+ * @brief Test-only: return address of s_reconnect_task for injection.
+ * Not compiled in production builds.
+ */
+TaskHandle_t *wifi_manager_get_reconnect_task_ptr(void);
+#endif

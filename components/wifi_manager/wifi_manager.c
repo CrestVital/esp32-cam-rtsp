@@ -13,6 +13,7 @@
 #include "nvs.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
+#include "freertos/semphr.h"
 #include "app_event.h"
 #if CONFIG_IDF_TARGET_ESP32 && !CONFIG_IDF_TARGET_ESP32S3 && CONFIG_BT_CONTROLLER_ENABLED
 #include "esp_bt.h"
@@ -39,13 +40,23 @@ static bool s_initialized        = false;
 static bool s_connected          = false;
 static bool s_reconnect_enabled  = false;
 static TaskHandle_t s_reconnect_task = NULL;
+static SemaphoreHandle_t s_reconnect_mutex = NULL;
 
 static char  s_target_ssid[WIFI_SSID_BUF_LEN];
 static char  s_target_pass[WIFI_PASS_BUF_LEN];
 static int   s_attempt_count = 0;
 
+#if defined(UNIT_TEST)
+/* Expose the address of s_reconnect_task for host-test injection only.
+ * Never call this from production code. */
+TaskHandle_t *wifi_manager_get_reconnect_task_ptr(void)
+{
+    return &s_reconnect_task;
+}
+#endif /* UNIT_TEST */
+
 static void wifi_event_handler(void *arg, esp_event_base_t base,
-                               int32_t event_id, void *event_data);
+                                int32_t event_id, void *event_data);
 static void reconnect_task(void *param);
 
 static void wifi_event_handler(void *arg, esp_event_base_t base,
@@ -76,24 +87,47 @@ static void wifi_event_handler(void *arg, esp_event_base_t base,
             ESP_LOGW(TAG, "STA disconnected");
             app_event_post(APP_EVENT_WIFI_DISCONNECTED, NULL, 0);
 
-            if (s_reconnect_enabled) {
-                /* Wake the reconnect task if it already exists; otherwise
-                 * create it fresh. The task checks s_reconnect_enabled on
-                 * every iteration. */
-                if (s_reconnect_task != NULL) {
-                    xTaskNotifyGive(s_reconnect_task);
-                } else {
-                    /* Fresh episode — reset attempt counter before
-                     * creating the task. */
-                    s_attempt_count = 0;
-                    BaseType_t created = xTaskCreate(
-                        reconnect_task, WIFI_RECONNECT_TASK_NAME,
-                        WIFI_RECONNECT_TASK_STACK, NULL,
-                        WIFI_RECONNECT_TASK_PRIORITY, &s_reconnect_task);
-                    if (created != pdPASS) {
-                        ESP_LOGE(TAG, "Failed to create reconnect task");
+            TaskHandle_t task_to_notify = NULL;
+
+            if (s_reconnect_mutex != NULL &&
+                xSemaphoreTake(s_reconnect_mutex, portMAX_DELAY) == pdTRUE) {
+                if (s_reconnect_enabled) {
+                    /* Under mutex: check whether a reconnect task already
+                     * exists. If it does, copy the handle so it can be
+                     * notified after releasing the mutex. If it does not,
+                     * create a fresh task for the current disconnect
+                     * episode. */
+                    if (s_reconnect_task != NULL) {
+                        /* Copy before release — the task may clear
+                         * s_reconnect_task immediately after waking, so
+                         * the local copy keeps the notify target valid.
+                         * The mutex is released before xTaskNotifyGive to
+                         * avoid holding it when the notified task resumes
+                         * on a higher effective priority. */
+                        task_to_notify = s_reconnect_task;
+                    } else {
+                        /* Fresh disconnect episode — reset attempt counter
+                         * before creating the reconnect task so the
+                         * exponential backoff starts from delay_base. */
+                        s_attempt_count = 0;
+                        BaseType_t created = xTaskCreate(
+                            reconnect_task, WIFI_RECONNECT_TASK_NAME,
+                            WIFI_RECONNECT_TASK_STACK, NULL,
+                            WIFI_RECONNECT_TASK_PRIORITY,
+                            &s_reconnect_task);
+                        if (created != pdPASS) {
+                            ESP_LOGE(TAG,
+                                "Failed to create reconnect task");
+                        }
                     }
                 }
+                xSemaphoreGive(s_reconnect_mutex);
+            }
+
+            /* Notify outside the mutex — prevents holding the mutex when
+             * the woken task resumes on a higher effective priority. */
+            if (task_to_notify != NULL) {
+                xTaskNotifyGive(task_to_notify);
             }
         }
     } else if (base == IP_EVENT && event_id == IP_EVENT_STA_GOT_IP) {
@@ -152,9 +186,16 @@ static void reconnect_task(void *param)
                  WIFI_RECONNECT_MAX_ATTEMPTS);
     }
 
-    /* Clear the handle so the event handler knows to create a new task
-     * on the next disconnect cycle. */
-    s_reconnect_task = NULL;
+    /* Clear the handle under mutex so deinit's poll loop sees NULL
+     * and knows this task has finished. vTaskDelete(NULL) then removes
+     * this task from the scheduler. Without the mutex, a concurrent
+     * deinit could call vTaskDelete on this handle after it has already
+     * been freed, causing a FreeRTOS kernel panic on ESP32-S3. */
+    if (s_reconnect_mutex != NULL &&
+        xSemaphoreTake(s_reconnect_mutex, portMAX_DELAY) == pdTRUE) {
+        s_reconnect_task = NULL;
+        xSemaphoreGive(s_reconnect_mutex);
+    }
     vTaskDelete(NULL);
 }
 
@@ -173,6 +214,14 @@ esp_err_t wifi_manager_init(void)
         ESP_LOGE(TAG, "WiFi manager already initialised");
         return ESP_ERR_INVALID_STATE;
     }
+
+    /* Reset reconnect state in case a previous deinit timed out while
+     * the reconnect task was still running — ensures init always starts
+     * from a clean slate regardless of how the previous cycle ended. */
+    s_reconnect_task    = NULL;
+    s_attempt_count     = 0;
+    s_reconnect_enabled = false;
+    s_connected         = false;
 
     /* Initialise LwIP netif layer and create the default station netif.
      * Must happen before esp_wifi_init(). */
@@ -216,6 +265,18 @@ esp_err_t wifi_manager_init(void)
     }
 #endif
 
+    /* Create the reconnect mutex before registering event handlers so
+     * that no incoming WiFi event can arrive with s_reconnect_mutex == NULL.
+     * This mutex guards s_reconnect_task across all three contexts: event
+     * handler, deinit, and the reconnect task itself. On a dual-core Xtensa
+     * LX7, concurrent reads and writes without this mutex can produce torn
+     * reads, stale values, or double-task-handle kernel panics. */
+    s_reconnect_mutex = xSemaphoreCreateMutex();
+    if (s_reconnect_mutex == NULL) {
+        ESP_LOGE(TAG, "Failed to create reconnect mutex");
+        goto fail_deinit_wifi;
+    }
+
     /* Register WiFi-level event handler on the default event loop.
      * All WIFI_EVENT_* events are delivered here. */
     ret = esp_event_handler_register(WIFI_EVENT, ESP_EVENT_ANY_ID,
@@ -223,6 +284,8 @@ esp_err_t wifi_manager_init(void)
     if (ret != ESP_OK) {
         ESP_LOGE(TAG, "Failed to register WiFi event handler: %s",
                  esp_err_to_name(ret));
+        vSemaphoreDelete(s_reconnect_mutex);
+        s_reconnect_mutex = NULL;
         goto fail_deinit_wifi;
     }
 
@@ -235,6 +298,8 @@ esp_err_t wifi_manager_init(void)
         /* Unregister the WiFi handler to leave a clean state. */
         esp_event_handler_unregister(WIFI_EVENT, ESP_EVENT_ANY_ID,
                                      &wifi_event_handler);
+        vSemaphoreDelete(s_reconnect_mutex);
+        s_reconnect_mutex = NULL;
         goto fail_deinit_wifi;
     }
 
@@ -258,18 +323,65 @@ esp_err_t wifi_manager_deinit(void)
 {
     /* Deinitialise the WiFi subsystem.
      *
-     * Stops the reconnect task if it is running (setting s_reconnect_enabled
-     * to false guarantees the task terminates on its next iteration), then
-     * unregisters event handlers, stops WiFi, and releases the netif.
-     * Safe to call even if not initialised (returns OK because the intended
-     * state is already reached). */
+     * Sets s_reconnect_enabled = false to signal the reconnect task to stop,
+     * then wakes the task (xTaskNotifyGive) so it exits on its next
+     * s_reconnect_enabled check. Polls s_reconnect_task under the mutex
+     * in a bounded loop (500 ms) waiting for the task to NULL the handle
+     * before calling vTaskDelete(NULL). After the task exits, deletes the
+     * mutex, unregisters event handlers, and tears down the WiFi driver.
+     * Safe to call even if not initialised. */
 
-    /* Signal the reconnect task to exit. Clear the handle after the
-     * deletion — safe because the task is already stopping. */
+    /* Signal the reconnect task to exit and suppress new creations.
+     * s_reconnect_enabled is a bool — single-shot write that does not
+     * need mutex protection, but must be set before waking the task. */
     s_reconnect_enabled = false;
-    if (s_reconnect_task != NULL) {
-        vTaskDelete(s_reconnect_task);
+
+    if (s_reconnect_mutex != NULL) {
+        /* Wake the task so it sees s_reconnect_enabled == false on its
+         * next loop iteration and exits promptly, without waiting for
+         * the full exponential backoff timeout. */
+        if (xSemaphoreTake(s_reconnect_mutex, portMAX_DELAY) == pdTRUE) {
+            TaskHandle_t task_to_wake = s_reconnect_task;
+            xSemaphoreGive(s_reconnect_mutex);
+            if (task_to_wake != NULL) {
+                xTaskNotifyGive(task_to_wake);
+            }
+        }
+
+        /* Poll for the task to NULL s_reconnect_task (cooperative exit).
+         * The mutex is acquired and released on each iteration so the
+         * task can acquire it itself during its cleanup section.
+         * vTaskDelay is called outside the critical section — the task
+         * can run unimpeded between the release and the next take. */
+        const int max_polls = 50;
+        for (int i = 0; i < max_polls; i++) {
+            bool task_done = false;
+            if (xSemaphoreTake(s_reconnect_mutex, pdMS_TO_TICKS(10))
+                == pdTRUE) {
+                task_done = (s_reconnect_task == NULL);
+                xSemaphoreGive(s_reconnect_mutex);
+            }
+            if (task_done) {
+                break;
+            }
+            vTaskDelay(pdMS_TO_TICKS(10));
+            if (i == max_polls - 1) {
+                ESP_LOGW(TAG,
+                    "Reconnect task did not exit within 500 ms");
+            }
+        }
+
+        /* Force-clear the handle even on the timeout path: if the task
+         * did not exit within 500 ms, s_reconnect_mutex is about to be
+         * deleted, so the task's cleanup section will skip the NULL
+         * assignment. Without this, a subsequent init + disconnect would
+         * call xTaskNotifyGive on a freed task handle. */
         s_reconnect_task = NULL;
+
+        /* Tear down the mutex — the manager is being deinitialised and
+         * all future accesses to s_reconnect_task are illegal. */
+        vSemaphoreDelete(s_reconnect_mutex);
+        s_reconnect_mutex = NULL;
     }
 
     /* Unregister event handlers — these are no-ops if not registered,

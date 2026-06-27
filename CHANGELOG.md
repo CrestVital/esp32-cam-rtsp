@@ -6,6 +6,38 @@ Versioning: [Semantic Versioning](https://semver.org/)
 
 ## [Unreleased]
 
+### Fixed — ESPCAMFW-44
+
+- `wifi_manager`: eliminate race condition on `s_reconnect_task` — the static
+  `TaskHandle_t` was read and written from three concurrent contexts
+  (`wifi_event_handler`, `wifi_manager_deinit`, `reconnect_task`) with no
+  synchronisation, causing FreeRTOS kernel panics on ESP32-S3 (dual-core
+  Xtensa LX7)
+- Introduced `s_reconnect_mutex` (`SemaphoreHandle_t`) guarding every access
+  to `s_reconnect_task`; mutex created before `esp_event_handler_register()`
+  so no event arrives with a NULL mutex; deleted after the shutdown poll loop
+  in `wifi_manager_deinit()`
+- Replaced external `vTaskDelete(s_reconnect_task)` with cooperative shutdown:
+  `deinit()` sets `s_reconnect_enabled = false`, wakes the task via
+  `xTaskNotifyGive`, and polls `s_reconnect_task` under the mutex
+  (50 × 10 ms) until the task self-deletes; force-clears `s_reconnect_task =
+  NULL` before `vSemaphoreDelete` to guard the timeout path
+- `wifi_event_handler()` WIFI_EVENT_STA_DISCONNECTED: handle copied to local
+  variable before `xSemaphoreGive`; `xTaskNotifyGive` called outside the
+  critical section — eliminates priority inversion risk
+- `wifi_manager_init()`: unconditional reset of `s_reconnect_task`,
+  `s_attempt_count`, `s_reconnect_enabled`, `s_connected` after `s_initialized`
+  guard — guarantees clean state after a timed-out deinit cycle
+- 2 new Unity host tests (`test_deinit_cooperative_shutdown_with_injected_task`,
+  `test_deinit_timeout_path_clears_stale_handle`); total host suite: **78 tests**
+  across 5 suites, 0 failures
+- New test-only accessor `wifi_manager_get_reconnect_task_ptr()` under
+  `#if defined(UNIT_TEST)`; `mock_set/clear_reconnect_task_handle()` injection
+  helpers in `test/mocks/mock_freertos_task.c`; `-DUNIT_TEST=1` added to
+  `CFLAGS_WIFI_MANAGER` in `test/Makefile`
+- Follow-up ESPCAMFW-46 created for orphaned-task edge case on extreme
+  timeout path (Medium priority, pre-`camera_driver`)
+
 ### Added — ESPCAMFW-43
 
 - `test/mocks/mock_nvs_state.c`: namespace isolation for mock NVS --

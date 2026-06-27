@@ -1,6 +1,6 @@
 # Status — esp32-cam-rtsp
 
-**Last updated:** 2026-06-26
+**Last updated:** 2026-06-27
 **Version:** 0.0.1-dev
 **Active branch:** main
 
@@ -9,19 +9,27 @@
 ## Current State
 
 Infrastructure components merged to main: sys_log, nvs_config (extended
-with network_mode field), app_event, power_manager, wifi_manager,
-status_indicator. Test infrastructure (Unity host tests) in place —
-75 tests across 5 suites. [env:native] PlatformIO environment ready —
-host tests runnable via both pio test -e native and make -f test/Makefile.
-Firmware builds verified on all three target boards (LilyGo T-Display S3,
-AI Thinker ESP32-CAM, Olimex ESP32-POE). Board selection implemented via
-Kconfig choice BOARD_TARGET in new board_config component; include/board.h
-restored with full pin assignments for all three target boards (ESPCAMFW-45).
+with network_mode field), app_event, power_manager, wifi_manager (with
+mutex-guarded reconnect task, cooperative shutdown), status_indicator.
+Test infrastructure (Unity host tests) in place — 78 tests across 5 suites.
+[env:native] PlatformIO environment ready — host tests runnable via both
+pio test -e native and make -f test/Makefile. Firmware builds verified on
+all three target boards (LilyGo T-Display S3, AI Thinker ESP32-CAM,
+Olimex ESP32-POE). Board selection implemented via Kconfig choice
+BOARD_TARGET in new board_config component; include/board.h restored with
+full pin assignments for all three target boards (ESPCAMFW-45).
 
 ---
 
 ## What's Done
 
+- **[ESPCAMFW-44]** ✅ wifi_manager race condition fix — `s_reconnect_task`
+  now guarded by `s_reconnect_mutex` across all three concurrent contexts;
+  cooperative shutdown replaces external `vTaskDelete`; force-clear on
+  timeout path; mutex created before event handler registration;
+  release-before-notify in event handler; unconditional state reset in
+  `init()`; 2 new host tests (injected-handle cooperative path + timeout
+  path); 78 host tests total, 0 failures; follow-up ESPCAMFW-46 created
 - **[ESPCAMFW-43]** ✅ NVS mock namespace isolation -- handle table maps each
   nvs_open() call to a namespace; nvs_get_*/nvs_set_* scoped per handle;
   wildcard "*" fallback preserves all 39 nvs_config tests unchanged;
@@ -89,9 +97,11 @@ restored with full pin assignments for all three target boards (ESPCAMFW-45).
 
 ## Open Tickets (spin-offs)
 
-- **[ESPCAMFW-44]** 🔴 High — wifi_manager s_reconnect_task race condition:
-  s_reconnect_task written from event loop task and read from deinit without
-  synchronisation; needs mutex or cooperative shutdown via task notification
+- **[ESPCAMFW-46]** 🟡 Medium — wifi_manager orphaned reconnect task on deinit
+  timeout: if reconnect task does not exit within 500 ms, a subsequent
+  init+connect cycle creates a new mutex; orphaned task wakes, acquires new
+  mutex, and overwrites new task handle. Generation counter or per-cycle
+  mutex allocation proposed. Address before camera_driver.
 
 ---
 
