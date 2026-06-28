@@ -6,6 +6,62 @@ Versioning: [Semantic Versioning](https://semver.org/)
 
 ## [Unreleased]
 
+### Changed — ESPCAMFW-54
+
+- **Board re-identification:** primary board corrected from LilyGo T-Display S3
+  (ESP32-S3, OV5640, 16 MB flash, OPI PSRAM) to **LilyGo T-Camera Plus**
+  (ESP32-D0WDQ6-V3 rev 3.0, OV2640, 4 MB flash, 8 MB quad-SPI PSRAM, ST7789
+  display, CH9102F USB-UART); verified via `esptool flash_id` and schematic
+  scan (MAC `b0:b2:1c:50:6d:e4`)
+- **Data-driven board abstraction (Variant B):** board data extracted from
+  `include/board.h` into standalone data files `boards/<board>.h` (pure
+  `#define` macros, no logic); `include/board.h` rewritten as a dispatcher —
+  `#include CONFIG_BOARD_DATA_FILE` from Kconfig, followed by compile-time
+  completeness validation (`#ifndef`/`#error` for all 6 capability flags, both
+  sensor flags with mutual-exclusion check, and all 17 `BOARD_CAM_PIN_*`
+  macros); adding a new board now requires only a new `boards/<board>.h` +
+  one Kconfig entry + one PlatformIO env — no changes to `board.h` or any
+  `.c` file
+- `boards/lilygo_t_camera_plus.h` — verified DVP camera pins (XCLK=4,
+  SIOD=18/SIOC=23 shared with IP5306 PMIC), ST7789 display SPI pins, SD SPI
+  pins; `boards/ai_thinker_esp32_cam.h` — standard AI Thinker pinout;
+  `boards/olimex_esp32_poe.h` — placeholder pins marked UNVERIFIED pending
+  hardware (ESPCAMFW-48)
+- `components/board_config/Kconfig.projbuild`: `choice BOARD_TARGET` rewritten
+  with new `config BOARD_DATA_FILE` string option; default changed to
+  `BOARD_LILYGO_T_CAMERA_PLUS`; `BOARD_LILYGO_T_DISPLAY_S3` removed
+- `components/board_config/CMakeLists.txt`: `INCLUDE_DIRS
+  "${CMAKE_SOURCE_DIR}/boards"` added so `#include CONFIG_BOARD_DATA_FILE`
+  resolves across all components
+- `sdkconfig.defaults` (shared): removed S3-specific settings
+  (`CONFIG_SPIRAM_MODE_OCT`, `CONFIG_SPIRAM_SPEED_80M`,
+  `CONFIG_ESPTOOLPY_FLASHSIZE_16MB`, `CONFIG_CAM_CTLR_DVP_CAM_ISR_CACHE_SAFE`,
+  USB-JTAG console options); cross-platform settings retained
+- `sdkconfig.defaults.lilygo-t-camera-plus` (new, replaces
+  `sdkconfig.defaults.lilygo-t-display-s3`): `CONFIG_SPIRAM_MODE_QUAD`,
+  `CONFIG_ESPTOOLPY_FLASHSIZE_4MB`, `CONFIG_STATUS_INDICATOR_HAS_DISPLAY=y`
+- `sdkconfig.defaults.ai-thinker-esp32-cam` / `olimex-esp32-poe`: updated
+  with explicit `CONFIG_BOARD_*`, PSRAM mode and flash size
+- `partitions/partitions_4mb_ota.csv` (new): dual-slot OTA layout for 4 MB
+  flash (nvs 24 KB, otadata 8 KB, app0 1792 KB, app1 1792 KB, littlefs
+  384 KB); replaces `partitions/partitions_ota.csv` (16 MB S3 layout, removed);
+  `board_build.partitions` now set for all three firmware environments
+- `platformio.ini`: `[env:lilygo-t-display-s3]` replaced by
+  `[env:lilygo-t-camera-plus]` (`board = esp32dev`, 4 MB flash, 40 MHz);
+  `build_flags = -DCONFIG_STATUS_INDICATOR_HAS_DISPLAY=1` workaround removed
+  (display selection now via sdkconfig fragment); `default_envs` updated
+- Sitewide rename — `lilygo-t-display-s3` / `BOARD_LILYGO_T_DISPLAY_S3` /
+  `LilyGo T-Display S3` removed from all active files (ci.yml, release.yml,
+  agent context, scripts, docs); CI `permissions:` blocks preserved unchanged
+- `docs/adr/ADR-004-board-abstraction.md`: documents Variant A (`#if/#elif`
+  chain, rejected), Variant B (data files + Kconfig, accepted), and the prior
+  failed `-DBOARD_HEADER` approach (ESPCAMFW-39)
+- `DEVELOPMENT.md`: "How to add a board" section; board table updated; Purpose
+  paragraph corrected (`ESP32-S3` → `ESP32`)
+- **82 host tests, 0 failures** (2 new tests added in ESPCAMFW-46 cycle
+  account for count going from 80 to 82; this ticket adds no new tests)
+- All three firmware builds pass with zero errors and zero warnings
+
 ### Security — ESPCAMFW-53
 
 - CI: restrict `GITHUB_TOKEN` to least privilege in GitHub Actions workflows —

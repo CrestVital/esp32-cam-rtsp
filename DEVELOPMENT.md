@@ -2,7 +2,7 @@
 
 ## Purpose
 
-ESP32-S3 firmware for OV-based camera devices. Streams live video via RTSP
+ESP32 firmware for OV-based camera devices. Streams live video via RTSP
 to the CrestVital edge pipeline.
 
 This firmware is a **leaf node** in the CrestVital platform — it has no
@@ -128,28 +128,40 @@ External ESP-IDF components (managed via `idf_component.yml` when added):
 
 ## Board Abstraction
 
-The firmware supports multiple hardware targets. Board-specific pin assignments
-and capability flags are isolated in `boards/<name>.h` headers.
+The firmware supports multiple ESP32-based boards. Board-specific pin assignments
+and capability flags are isolated in `boards/<name>.h` data files (pure `#define`
+macros, no logic).
 
-Each PlatformIO environment passes `-DBOARD_HEADER="boards/<name>.h"` in
-`build_flags`. `include/board.h` includes the selected header via
-`#include BOARD_HEADER` and validates at compile time that all required
-macros are defined.
+`include/board.h` includes the selected board file via `#include CONFIG_BOARD_DATA_FILE`,
+where `CONFIG_BOARD_DATA_FILE` is a Kconfig string option set in
+`components/board_config/Kconfig.projbuild`. This is Variant B of the board abstraction
+strategy — see `docs/adr/ADR-004-board-abstraction.md`.
+
+### How to add a board
+
+1. Create `boards/<new_board_name>.h` with all required `#define` macros
+   (capability flags + all `BOARD_CAM_PIN_*`). Copy an existing board file as a template.
+2. Add an entry in `components/board_config/Kconfig.projbuild`:
+   - One `config BOARD_<NEW_BOARD>` bool in the `choice` block.
+   - One `default "boards/<new_board_name>.h" if BOARD_<NEW_BOARD>` line in
+     `config BOARD_DATA_FILE`.
+3. Add a PlatformIO environment in `platformio.ini` and a
+   `sdkconfig.defaults.<new-board>` fragment.
+4. That is all. No changes to `include/board.h` or any `.c` file are required.
+
+If the board data file is missing any required macro, the build fails with a
+`#error` message naming the missing macro.
 
 ### Supported boards
 
 | PlatformIO env | Board | MCU | Camera | Network | PSRAM |
 |---|---|---|---|---|---|
-| `lilygo-t-display-s3` | LilyGo T-Display S3 | ESP32-S3 | OV5640 | WiFi | 8 MB OPI |
+| `lilygo-t-camera-plus` | LilyGo T-Camera Plus | ESP32-D0WDQ6-V3 | OV2640 | WiFi | 8 MB quad |
 | `ai-thinker-esp32-cam` | AI Thinker ESP32-CAM | ESP32 | OV2640 | WiFi | 4 MB |
 | `olimex-esp32-poe` | Olimex ESP32-POE | ESP32 | OV2640 | Ethernet | none |
 
 All boards use the DVP (parallel 8-bit) camera interface. MIPI CSI-2 is not
-supported on ESP32/ESP32-S3 without an external ISP.
-
-The LilyGo T-Display S3 and Olimex ESP32-POE camera pin definitions are
-placeholders pending hardware verification. See `TODO(hardware)` comments in
-the respective board headers.
+supported on these ESP32 variants without an external ISP.
 
 ---
 

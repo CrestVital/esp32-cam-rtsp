@@ -18,7 +18,7 @@ jobs:
       fail-fast: false
       matrix:
         env:
-          - lilygo-t-display-s3
+          - lilygo-t-camera-plus
           - ai-thinker-esp32-cam
           - olimex-esp32-poe
 

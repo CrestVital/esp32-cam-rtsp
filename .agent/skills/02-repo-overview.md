@@ -7,9 +7,9 @@ underlying framework is **ESP-IDF** (not Arduino). The two are not interchangeab
 
 ```ini
 ; platformio.ini (summary)
-[env:lilygo-t-display-s3]
+[env:lilygo-t-camera-plus]
 platform  = espressif32@7.0.0
-board     = lilygo-t-display-s3
+board     = esp32dev
 framework = espidf
 ```
 
@@ -17,10 +17,10 @@ framework = espidf
 
 ```powershell
 # Build only
-pio run -e lilygo-t-display-s3
+pio run -e lilygo-t-camera-plus
 
 # Build + flash (serial)
-pio run -e lilygo-t-display-s3 --target upload
+pio run -e lilygo-t-camera-plus --target upload
 
 # Open serial monitor
 pio device monitor          # 115200 baud, with esp32_exception_decoder
@@ -51,7 +51,7 @@ esp32-cam-rtsp/
 ├── lib/                     PlatformIO-managed libraries (if any).
 ├── test/                    Unity-based unit tests.
 ├── partitions/
-│   └── partitions_ota.csv   Flash layout. See 03-architecture.md for details.
+│   └── partitions_4mb_ota.csv   Flash layout. See 03-architecture.md for details.
 ├── docs/
 │   └── adr/                 Architecture Decision Records.
 ├── scripts/

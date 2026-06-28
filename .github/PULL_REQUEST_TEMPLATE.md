@@ -24,7 +24,7 @@ Check only one:
 All items must be checked before requesting a review:
 
 - [ ] `.\scripts\pre-pr.ps1` passes with no errors
-- [ ] `pio run -e lilygo-t-display-s3` builds with **zero errors and zero warnings**
+- [ ] `pio run -e lilygo-t-camera-plus` builds with **zero errors and zero warnings**
 - [ ] All new functions have Doxygen `@brief` / `@param` / `@return` comments
 - [ ] All `esp_err_t` return values are checked (no silent ignores)
 - [ ] Large buffers (> 8 KB) allocated from PSRAM via `heap_caps_malloc(size, MALLOC_CAP_SPIRAM)`

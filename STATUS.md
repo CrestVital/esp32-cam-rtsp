@@ -11,19 +11,33 @@
 Infrastructure components merged to main: sys_log, nvs_config (extended
 with network_mode field), app_event, power_manager, wifi_manager (with
 mutex-guarded reconnect task, cooperative shutdown), status_indicator.
-Test infrastructure (Unity host tests) in place — 80 tests across 5 suites.
+Test infrastructure (Unity host tests) in place — 82 tests across 5 suites.
 [env:native] PlatformIO environment ready — host tests runnable via both
 pio test -e native and make -f test/Makefile. Firmware builds verified on
-all three target boards (LilyGo T-Display S3, AI Thinker ESP32-CAM,
-Olimex ESP32-POE). Board selection implemented via Kconfig choice
-BOARD_TARGET in new board_config component; include/board.h restored with
-full pin assignments for all three target boards (ESPCAMFW-45). CI hardened —
-GITHUB_TOKEN restricted to least-privilege permissions in both GitHub Actions
-workflows (ESPCAMFW-53).
+all three target boards (LilyGo T-Camera Plus, AI Thinker ESP32-CAM,
+Olimex ESP32-POE). Primary board corrected to LilyGo T-Camera Plus
+(ESP32-D0WDQ6-V3, OV2640, 4 MB flash, 8 MB quad PSRAM) and data-driven
+board abstraction (Variant B) introduced — board data in `boards/<board>.h`,
+dispatch via `#include CONFIG_BOARD_DATA_FILE` from Kconfig; adding a new
+board requires no changes to `board.h` or any `.c` file (ESPCAMFW-54).
+CI hardened — GITHUB_TOKEN restricted to least-privilege permissions in
+both GitHub Actions workflows (ESPCAMFW-53).
 
 ---
 
 ## What's Done
+
+- **[ESPCAMFW-54]** ✅ Board re-identification + data-driven abstraction —
+  primary board corrected from LilyGo T-Display S3 (ESP32-S3) to LilyGo
+  T-Camera Plus (ESP32-D0WDQ6-V3 rev 3.0, OV2640, 4 MB flash, 8 MB quad
+  PSRAM, ST7789, CH9102F; verified esptool + schematic); `boards/<board>.h`
+  data files (pure `#define`, no logic) replace inline `#if/#elif` chain in
+  `board.h`; `include/board.h` dispatches via `#include CONFIG_BOARD_DATA_FILE`
+  (Kconfig string option) + compile-time completeness validation; `partitions/
+  partitions_4mb_ota.csv` replaces 16 MB S3 layout; all three envs get
+  explicit `board_build.partitions`; sitewide rename of `lilygo-t-display-s3`
+  / `BOARD_LILYGO_T_DISPLAY_S3` completed; ADR-004 documents the abstraction
+  decision; 82 host tests, 0 failures; 3× firmware builds PASS, 0 warnings
 
 - **[ESPCAMFW-53]** ✅ CI GITHUB_TOKEN least-privilege — explicit `permissions`
   blocks added to both GitHub Actions workflows; `ci.yml` workflow-level

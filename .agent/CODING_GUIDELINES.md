@@ -324,6 +324,6 @@ cfg->rtsp_port = DEFAULT_RTSP_PORT;  /* stored value out of range; fall back to 
 - [ ] All `esp_err_t` return values checked
 - [ ] No allocations from internal heap for buffers > 8 KB
 - [ ] ISR functions marked `IRAM_ATTR`, no blocking calls inside ISRs
-- [ ] `pio run -e lilygo-t-display-s3` passes with zero errors and zero warnings
+- [ ] `pio run -e lilygo-t-camera-plus` passes with zero errors and zero warnings
 - [ ] `test/components/<component_name>/test_<component_name>.c` exists with >= 8 test cases and `make -f test/Makefile` passes
 - [ ] Implementation report written (see agent-specific file for format)

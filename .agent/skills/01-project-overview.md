@@ -3,7 +3,7 @@
 ## What This Repository Does
 
 `esp32-cam-rtsp` is the **camera edge firmware** for the CrestVital livestock
-monitoring platform. It runs on LilyGo T-Display S3 (ESP32-S3) devices mounted
+monitoring platform. It runs on LilyGo T-Camera Plus (ESP32-D0WDQ6-V3) devices mounted
 above livestock pens and streams live video to the CrestVital edge pipeline.
 
 ## Role in CrestVital Platform
@@ -23,7 +23,7 @@ API                          — stores events, sends alerts
 
 ## Target Hardware
 
-- **Board:** LilyGo T-Display S3
+- **Board:** LilyGo T-Camera Plus
 - **MCU:** ESP32-S3, dual-core Xtensa LX7, 240 MHz
 - **Flash:** 16 MB (QIO, 80 MHz)
 - **PSRAM:** OPI PSRAM, 8 MB (Octal, 80 MHz)

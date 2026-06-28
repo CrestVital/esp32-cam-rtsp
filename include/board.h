@@ -1,99 +1,124 @@
 #pragma once
 
 /*
- * board.h -- board capability flags and camera pin assignments.
+ * board.h — Data-driven board dispatcher.
  *
- * This file is the single source of truth for all board-specific constants.
- * It derives every macro from the Kconfig choice CONFIG_BOARD_* set in
- * components/board_config/Kconfig.projbuild.
+ * Includes the board data file selected by Kconfig (CONFIG_BOARD_DATA_FILE),
+ * then performs compile-time completeness validation.
  *
- * For host-side unit tests, test/mocks/sdkconfig.h provides the
- * CONFIG_BOARD_* values via -D flags passed by test/Makefile.
+ * To add a new board:
+ *   1. Create boards/<new_board>.h with all required #define macros.
+ *   2. Add a config entry in components/board_config/Kconfig.projbuild.
+ *   3. Add an env and sdkconfig fragment in platformio.ini.
+ *   No changes to this file or any .c file are required.
+ *
+ * For host-side unit tests, test/mocks/sdkconfig.h provides
+ * CONFIG_BOARD_DATA_FILE via the -DCONFIG_BOARD_DATA_FILE=... flag
+ * passed by test/Makefile.
  */
 
 #include "sdkconfig.h"
 
-#if CONFIG_BOARD_LILYGO_T_DISPLAY_S3
+#ifndef CONFIG_BOARD_DATA_FILE
+#error "CONFIG_BOARD_DATA_FILE not set. Select a board in Kconfig (Board Selection menu)."
+#endif
 
-#define BOARD_HAS_WIFI          1
-#define BOARD_HAS_ETHERNET      0
-#define BOARD_HAS_DISPLAY       1
-#define BOARD_PSRAM_SIZE_MB     8
+#include CONFIG_BOARD_DATA_FILE
 
-#define BOARD_SENSOR_OV5640     1
-#define BOARD_SENSOR_OV2640     0
+/* ---- Compile-time completeness validation -------------------------------- */
 
-#define BOARD_CAM_PIN_PWDN      (-1)
-#define BOARD_CAM_PIN_RESET     (-1)
-#define BOARD_CAM_PIN_XCLK      2
-#define BOARD_CAM_PIN_SIOD      3
-#define BOARD_CAM_PIN_SIOC      1
-#define BOARD_CAM_PIN_D7        46
-#define BOARD_CAM_PIN_D6        45
-#define BOARD_CAM_PIN_D5        10
-#define BOARD_CAM_PIN_D4        11
-#define BOARD_CAM_PIN_D3        12
-#define BOARD_CAM_PIN_D2        13
-#define BOARD_CAM_PIN_D1        42
-#define BOARD_CAM_PIN_D0        41
-#define BOARD_CAM_PIN_VSYNC     21
-#define BOARD_CAM_PIN_HREF      38
-#define BOARD_CAM_PIN_PCLK      40
+#ifndef BOARD_HAS_WIFI
+#error "Board data file missing: BOARD_HAS_WIFI"
+#endif
 
-#elif CONFIG_BOARD_AI_THINKER_ESP32_CAM
+#ifndef BOARD_HAS_ETHERNET
+#error "Board data file missing: BOARD_HAS_ETHERNET"
+#endif
 
-#define BOARD_HAS_WIFI          1
-#define BOARD_HAS_ETHERNET      0
-#define BOARD_HAS_DISPLAY       0
-#define BOARD_PSRAM_SIZE_MB     4
+#ifndef BOARD_HAS_DISPLAY
+#error "Board data file missing: BOARD_HAS_DISPLAY"
+#endif
 
-#define BOARD_SENSOR_OV5640     0
-#define BOARD_SENSOR_OV2640     1
+#ifndef BOARD_PSRAM_SIZE_MB
+#error "Board data file missing: BOARD_PSRAM_SIZE_MB"
+#endif
 
-#define BOARD_CAM_PIN_PWDN      32
-#define BOARD_CAM_PIN_RESET     (-1)
-#define BOARD_CAM_PIN_XCLK      0
-#define BOARD_CAM_PIN_SIOD      26
-#define BOARD_CAM_PIN_SIOC      27
-#define BOARD_CAM_PIN_D7        35
-#define BOARD_CAM_PIN_D6        34
-#define BOARD_CAM_PIN_D5        39
-#define BOARD_CAM_PIN_D4        36
-#define BOARD_CAM_PIN_D3        21
-#define BOARD_CAM_PIN_D2        19
-#define BOARD_CAM_PIN_D1        18
-#define BOARD_CAM_PIN_D0        5
-#define BOARD_CAM_PIN_VSYNC     25
-#define BOARD_CAM_PIN_HREF      23
-#define BOARD_CAM_PIN_PCLK      22
+#ifndef BOARD_SENSOR_OV2640
+#error "Board data file missing: BOARD_SENSOR_OV2640"
+#endif
 
-#elif CONFIG_BOARD_OLIMEX_ESP32_POE
+#ifndef BOARD_SENSOR_OV5640
+#error "Board data file missing: BOARD_SENSOR_OV5640"
+#endif
 
-#define BOARD_HAS_WIFI          0
-#define BOARD_HAS_ETHERNET      1
-#define BOARD_HAS_DISPLAY       0
-#define BOARD_PSRAM_SIZE_MB     0
+#if !BOARD_SENSOR_OV2640 && !BOARD_SENSOR_OV5640
+#error "Board data file must define exactly one sensor: BOARD_SENSOR_OV2640=1 or BOARD_SENSOR_OV5640=1"
+#endif
 
-#define BOARD_SENSOR_OV5640     0
-#define BOARD_SENSOR_OV2640     1
+#if BOARD_SENSOR_OV2640 && BOARD_SENSOR_OV5640
+#error "Board data file must not set both BOARD_SENSOR_OV2640=1 and BOARD_SENSOR_OV5640=1"
+#endif
 
-#define BOARD_CAM_PIN_PWDN      (-1)
-#define BOARD_CAM_PIN_RESET     (-1)
-#define BOARD_CAM_PIN_XCLK      4
-#define BOARD_CAM_PIN_SIOD      18
-#define BOARD_CAM_PIN_SIOC      23
-#define BOARD_CAM_PIN_D7        36
-#define BOARD_CAM_PIN_D6        37
-#define BOARD_CAM_PIN_D5        38
-#define BOARD_CAM_PIN_D4        39
-#define BOARD_CAM_PIN_D3        35
-#define BOARD_CAM_PIN_D2        26
-#define BOARD_CAM_PIN_D1        13
-#define BOARD_CAM_PIN_D0        34
-#define BOARD_CAM_PIN_VSYNC     5
-#define BOARD_CAM_PIN_HREF      27
-#define BOARD_CAM_PIN_PCLK      25
+#ifndef BOARD_CAM_PIN_PWDN
+#error "Board data file missing: BOARD_CAM_PIN_PWDN"
+#endif
 
-#else
-#error "No board selected. Set CONFIG_BOARD_* in sdkconfig.defaults.<board> or via Kconfig."
+#ifndef BOARD_CAM_PIN_RESET
+#error "Board data file missing: BOARD_CAM_PIN_RESET"
+#endif
+
+#ifndef BOARD_CAM_PIN_XCLK
+#error "Board data file missing: BOARD_CAM_PIN_XCLK"
+#endif
+
+#ifndef BOARD_CAM_PIN_SIOD
+#error "Board data file missing: BOARD_CAM_PIN_SIOD"
+#endif
+
+#ifndef BOARD_CAM_PIN_SIOC
+#error "Board data file missing: BOARD_CAM_PIN_SIOC"
+#endif
+
+#ifndef BOARD_CAM_PIN_D7
+#error "Board data file missing: BOARD_CAM_PIN_D7"
+#endif
+
+#ifndef BOARD_CAM_PIN_D6
+#error "Board data file missing: BOARD_CAM_PIN_D6"
+#endif
+
+#ifndef BOARD_CAM_PIN_D5
+#error "Board data file missing: BOARD_CAM_PIN_D5"
+#endif
+
+#ifndef BOARD_CAM_PIN_D4
+#error "Board data file missing: BOARD_CAM_PIN_D4"
+#endif
+
+#ifndef BOARD_CAM_PIN_D3
+#error "Board data file missing: BOARD_CAM_PIN_D3"
+#endif
+
+#ifndef BOARD_CAM_PIN_D2
+#error "Board data file missing: BOARD_CAM_PIN_D2"
+#endif
+
+#ifndef BOARD_CAM_PIN_D1
+#error "Board data file missing: BOARD_CAM_PIN_D1"
+#endif
+
+#ifndef BOARD_CAM_PIN_D0
+#error "Board data file missing: BOARD_CAM_PIN_D0"
+#endif
+
+#ifndef BOARD_CAM_PIN_VSYNC
+#error "Board data file missing: BOARD_CAM_PIN_VSYNC"
+#endif
+
+#ifndef BOARD_CAM_PIN_HREF
+#error "Board data file missing: BOARD_CAM_PIN_HREF"
+#endif
+
+#ifndef BOARD_CAM_PIN_PCLK
+#error "Board data file missing: BOARD_CAM_PIN_PCLK"
 #endif

@@ -17,8 +17,8 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - env: lilygo-t-display-s3
-            artifact_suffix: lilygo-t-display-s3
+          - env: lilygo-t-camera-plus
+            artifact_suffix: lilygo-t-camera-plus
           - env: ai-thinker-esp32-cam
             artifact_suffix: ai-thinker-esp32-cam
           - env: olimex-esp32-poe
@@ -94,6 +94,6 @@ jobs:
           gh release create "${{ github.ref_name }}" \
             --title "esp32-cam-rtsp ${{ github.ref_name }}" \
             --notes-file release_notes.md \
-            artifacts/firmware-lilygo-t-display-s3/* \
+            artifacts/firmware-lilygo-t-camera-plus/* \
             artifacts/firmware-ai-thinker-esp32-cam/* \
             artifacts/firmware-olimex-esp32-poe/*
