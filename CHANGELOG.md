@@ -6,6 +6,20 @@ Versioning: [Semantic Versioning](https://semver.org/)
 
 ## [Unreleased]
 
+### Security — ESPCAMFW-53
+
+- CI: restrict `GITHUB_TOKEN` to least privilege in GitHub Actions workflows —
+  silences CodeQL alert `actions/missing-workflow-permissions`
+- `.github/workflows/ci.yml`: added workflow-level `permissions: contents: read`
+  (both `build` and `test` jobs only read the repo; artifact upload needs no
+  write scope)
+- `.github/workflows/release.yml`: narrowed top-level `permissions` from
+  `contents: write` to `contents: read`; `contents: write` granted at job level
+  only to the `release` job (the one running `gh release create`); `build` job
+  left to inherit read-only
+- No build logic, matrix, install steps, artifact rename, CHANGELOG extraction,
+  or env names changed; both workflows remain valid YAML
+
 ### Fixed — ESPCAMFW-46
 
 - `wifi_manager`: fix orphaned reconnect task after deinit timeout — if

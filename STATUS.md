@@ -1,6 +1,6 @@
 # Status — esp32-cam-rtsp
 
-**Last updated:** 2026-06-27
+**Last updated:** 2026-06-28
 **Version:** 0.0.1-dev
 **Active branch:** main
 
@@ -17,12 +17,19 @@ pio test -e native and make -f test/Makefile. Firmware builds verified on
 all three target boards (LilyGo T-Display S3, AI Thinker ESP32-CAM,
 Olimex ESP32-POE). Board selection implemented via Kconfig choice
 BOARD_TARGET in new board_config component; include/board.h restored with
-full pin assignments for all three target boards (ESPCAMFW-45).
+full pin assignments for all three target boards (ESPCAMFW-45). CI hardened —
+GITHUB_TOKEN restricted to least-privilege permissions in both GitHub Actions
+workflows (ESPCAMFW-53).
 
 ---
 
 ## What's Done
 
+- **[ESPCAMFW-53]** ✅ CI GITHUB_TOKEN least-privilege — explicit `permissions`
+  blocks added to both GitHub Actions workflows; `ci.yml` workflow-level
+  `contents: read`; `release.yml` top-level narrowed `write`→`read` with
+  job-level `contents: write` only on the `release` job; closes CodeQL
+  `actions/missing-workflow-permissions`; YAML-only change, no test-count impact
 - **[ESPCAMFW-46]** ✅ wifi_manager orphaned reconnect task fix — generation
   counter `s_reconnect_generation` (uint32_t) incremented on every
   `wifi_manager_init()`; passed to `reconnect_task()` via `pvParameters`
