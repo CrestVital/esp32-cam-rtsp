@@ -2,13 +2,15 @@ menu "Board Selection"
 
     choice BOARD_TARGET
         prompt "Target board"
-        default BOARD_LILYGO_T_DISPLAY_S3
+        default BOARD_LILYGO_T_CAMERA_PLUS
         help
-            Select the hardware board. This choice sets all board-specific
-            capability flags and camera pin assignments.
+            Select the hardware board. This choice sets CONFIG_BOARD_DATA_FILE
+            to the corresponding boards/<board>.h data file, which is included
+            by include/board.h at compile time.
+            To add a new board, create boards/<new>.h and add an entry here.
 
-        config BOARD_LILYGO_T_DISPLAY_S3
-            bool "LilyGo T-Display S3 (ESP32-S3, OV5640, WiFi, 8 MB OPI PSRAM, ST7789 display)"
+        config BOARD_LILYGO_T_CAMERA_PLUS
+            bool "LilyGo T-Camera Plus (ESP32, OV2640, WiFi, 8 MB quad PSRAM, ST7789 display)"
 
         config BOARD_AI_THINKER_ESP32_CAM
             bool "AI Thinker ESP32-CAM (ESP32, OV2640, WiFi, 4 MB PSRAM)"
@@ -18,9 +20,19 @@ menu "Board Selection"
 
     endchoice
 
+    config BOARD_DATA_FILE
+        string
+        default "boards/lilygo_t_camera_plus.h" if BOARD_LILYGO_T_CAMERA_PLUS
+        default "boards/ai_thinker_esp32_cam.h"  if BOARD_AI_THINKER_ESP32_CAM
+        default "boards/olimex_esp32_poe.h"      if BOARD_OLIMEX_ESP32_POE
+        help
+            Path to the board data header file, relative to the include path
+            configured in components/board_config/CMakeLists.txt.
+            Consumed by include/board.h via: #include CONFIG_BOARD_DATA_FILE
+
     config BOARD_HAS_WIFI
         bool
-        default y if BOARD_LILYGO_T_DISPLAY_S3 || BOARD_AI_THINKER_ESP32_CAM
+        default y if BOARD_LILYGO_T_CAMERA_PLUS || BOARD_AI_THINKER_ESP32_CAM
         default n
 
     config BOARD_HAS_ETHERNET

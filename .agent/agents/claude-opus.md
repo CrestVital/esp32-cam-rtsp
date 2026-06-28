@@ -2,9 +2,9 @@
 
 ## Project
 - Repository: esp32-cam-rtsp
-- Target board: LilyGo T-Display S3 (ESP32-S3, dual-core Xtensa LX7, 240 MHz)
-- Flash: 16 MB (QIO, 80 MHz)
-- PSRAM: OPI PSRAM (Octal, 80 MHz) — mandatory for large/DMA buffers
+- Target board: LilyGo T-Camera Plus (ESP32-D0WDQ6-V3, dual-core Xtensa LX6, 240 MHz)
+- Flash: 4 MB (QIO, 40 MHz)
+- PSRAM: 8 MB quad-SPI — mandatory for large/DMA buffers
 - Camera interface: DVP via LCDCAM peripheral (OV2640 / OV5640)
 - Build system: PlatformIO (`platformio.ini`) + ESP-IDF (`framework = espidf`, platform `espressif32@7.0.0`)
 - Language: C (ESP-IDF conventions)
@@ -41,7 +41,7 @@ esp32-cam-rtsp/
 ├── include/                 # Shared headers
 ├── test/                    # Unit tests (Unity framework)
 ├── partitions/
-│   └── partitions_ota.csv
+│   └── partitions_4mb_ota.csv
 ├── .agent/
 │   ├── CODING_GUIDELINES.md # Coding standard — read before reviewing
 │   ├── REVIEW_GUIDELINES.md # Review protocol — read before reviewing

@@ -161,7 +161,7 @@ Use this exact structure:
 ---
 
 ### Build Verification
-- `pio run -e lilygo-t-display-s3`: PASS / FAIL
+- `pio run -e lilygo-t-camera-plus`: PASS / FAIL
 - Warnings: {list any compiler warnings}
 
 ### What Was Done Well

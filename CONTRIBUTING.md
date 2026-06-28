@@ -28,13 +28,13 @@
 3. Verify the build:
 
    ```powershell
-   pio run -e lilygo-t-display-s3
+   pio run -e lilygo-t-camera-plus
    ```
 
 4. Connect the device and flash:
 
    ```powershell
-   pio run -e lilygo-t-display-s3 --target upload
+   pio run -e lilygo-t-camera-plus --target upload
    pio device monitor
    ```
 
@@ -64,7 +64,7 @@ esp32-cam-rtsp/
 ├── include/                 # Shared headers
 ├── test/                    # Unity-based unit tests
 ├── partitions/
-│   └── partitions_ota.csv   # Flash layout
+│   └── partitions_4mb_ota.csv   # Flash layout
 ├── docs/
 │   └── adr/                 # Architecture Decision Records
 ├── scripts/
@@ -142,7 +142,7 @@ Before opening a pull request, run the pre-PR script:
 The script checks:
 
 - Not on `main` branch
-- `pio run -e lilygo-t-display-s3` builds with zero errors and zero warnings
+- `pio run -e lilygo-t-camera-plus` builds with zero errors and zero warnings
 - `CHANGELOG.md` updated
 
 Fix all reported issues before opening the PR.

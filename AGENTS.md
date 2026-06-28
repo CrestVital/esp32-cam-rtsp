@@ -15,7 +15,7 @@ raw video into the CrestVital edge pipeline for further processing.
 
 - **Language:** C (ESP-IDF conventions)
 - **Build:** PlatformIO (`platformio.ini`) + ESP-IDF (`framework = espidf`)
-- **Board:** LilyGo T-Display S3 (ESP32-S3, 240 MHz, 16 MB Flash, OPI PSRAM)
+- **Board:** LilyGo T-Camera Plus (ESP32-D0WDQ6-V3, 240 MHz, 4 MB Flash, 8 MB quad PSRAM)
 - **Camera interface:** DVP via LCDCAM peripheral (OV2640/OV5640)
 - **CI:** GitHub Actions (`.github/workflows/`)
 - **Jira:** crestvital.atlassian.net — project key `ESPCAMFW`
@@ -33,7 +33,7 @@ esp32-cam-rtsp/
 ├── include/                 # Shared headers
 ├── test/                    # Unit tests (Unity framework)
 ├── partitions/
-│   └── partitions_ota.csv   # Flash layout
+│   └── partitions_4mb_ota.csv # Flash layout
 ├── scripts/
 │   └── pre-pr.ps1           # Pre-PR check script
 ├── .agent/

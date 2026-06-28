@@ -31,7 +31,7 @@ or mitigation within **30 days** for confirmed vulnerabilities.
 
 ## Scope
 
-This repository covers the ESP32-S3 firmware only. The broader CrestVital
+This repository covers the ESP32 firmware only. The broader CrestVital
 platform (edge pipeline, inference, API) is out of scope for this policy.
 
 ### In scope

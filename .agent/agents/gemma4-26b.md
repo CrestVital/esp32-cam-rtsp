@@ -2,7 +2,7 @@
 
 ## Project
 - Repository: esp32-cam-rtsp
-- Target board: LilyGo T-Display S3 (ESP32-S3)
+- Target board: LilyGo T-Camera Plus (ESP32-D0WDQ6-V3)
 - Build system: PlatformIO + ESP-IDF (framework = espidf)
 - Language: C (ESP-IDF conventions) unless explicitly stated otherwise
 

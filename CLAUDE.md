@@ -15,12 +15,12 @@ raw video into the CrestVital edge pipeline for further processing.
 
 | Property | Value |
 |----------|-------|
-| Board | LilyGo T-Display S3 |
-| MCU | ESP32-S3 (dual-core Xtensa LX7, 240 MHz) |
-| Flash | 16 MB (QIO, 80 MHz) |
-| PSRAM | OPI PSRAM (Octal, 80 MHz) |
+| Board | LilyGo T-Camera Plus |
+| MCU | ESP32-D0WDQ6-V3 (dual-core Xtensa LX6, 240 MHz) |
+| Flash | 4 MB (QIO, 40 MHz) |
+| PSRAM | 8 MB quad-SPI |
 | Camera interface | DVP (Digital Video Port via LCDCAM peripheral) |
-| Display | ST7789 (1.9" LCD, 170×320) — secondary output |
+| Display | ST7789 (1.3" LCD) — secondary output |
 
 ---
 
@@ -32,7 +32,7 @@ raw video into the CrestVital edge pipeline for further processing.
 | Build system | PlatformIO (`platformio.ini`) |
 | Framework | ESP-IDF (`framework = espidf`) |
 | PlatformIO platform | `espressif32@7.0.0` |
-| Partition table | `partitions/partitions_ota.csv` (OTA + LittleFS) |
+| Partition table | `partitions/partitions_4mb_ota.csv` (OTA + LittleFS) |
 | CI | GitHub Actions (`.github/workflows/`) |
 | Jira | crestvital.atlassian.net — project key `ESPCAMFW` |
 
@@ -50,7 +50,7 @@ esp32-cam-rtsp/
 ├── lib/                     # PlatformIO libraries
 ├── test/                    # Unit tests (Unity framework)
 ├── partitions/
-│   └── partitions_ota.csv   # Flash layout: nvs, ota_0, ota_1, littlefs
+│   └── partitions_4mb_ota.csv   # Flash layout: nvs, ota_0, ota_1, littlefs
 ├── docs/
 │   └── adr/                 # Architecture Decision Records
 ├── scripts/
@@ -152,16 +152,16 @@ This rule has no exceptions.
 
 ```powershell
 # Build
-pio run -e lilygo-t-display-s3
+pio run -e lilygo-t-camera-plus
 
 # Upload (serial)
-pio run -e lilygo-t-display-s3 --target upload
+pio run -e lilygo-t-camera-plus --target upload
 
 # Monitor
 pio device monitor
 
 # Build + upload + monitor in one step
-pio run -e lilygo-t-display-s3 --target upload && pio device monitor
+pio run -e lilygo-t-camera-plus --target upload && pio device monitor
 ```
 
 Alternative (ESP-IDF native):

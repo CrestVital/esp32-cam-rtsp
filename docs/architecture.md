@@ -2,7 +2,7 @@
 
 ## Role in the CrestVital Platform
 
-`esp32-cam-rtsp` is the **camera edge firmware**. It runs on LilyGo T-Display S3
+`esp32-cam-rtsp` is the **camera edge firmware**. It runs on LilyGo T-Camera Plus
 devices mounted above livestock pens and feeds raw video into the CrestVital edge pipeline.
 
 ```text

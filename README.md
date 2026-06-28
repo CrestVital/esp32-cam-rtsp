@@ -1,17 +1,17 @@
 # esp32-cam-rtsp
 
-ESP32-S3 firmware for OV-based camera devices. Captures frames via DVP interface,
+ESP32 firmware for OV-based camera devices. Captures frames via DVP interface,
 encodes them, and streams live video via RTSP to the CrestVital edge pipeline.
 
 ## Hardware
 
 | Property | Value |
 |----------|-------|
-| Board | LilyGo T-Display S3 |
-| MCU | ESP32-S3, 240 MHz, dual-core |
-| Flash | 16 MB (QIO) |
-| PSRAM | 8 MB OPI |
-| Camera | OV2640 / OV5640 via DVP (LCDCAM peripheral) |
+| Board | LilyGo T-Camera Plus |
+| MCU | ESP32-D0WDQ6-V3, 240 MHz, dual-core |
+| Flash | 4 MB (QIO) |
+| PSRAM | 8 MB quad-SPI |
+| Camera | OV2640 via DVP (LCDCAM peripheral) |
 
 ## Quick Start
 
@@ -24,13 +24,13 @@ encodes them, and streams live video via RTSP to the CrestVital edge pipeline.
 ### Build
 
 ```powershell
-pio run -e lilygo-t-display-s3
+pio run -e lilygo-t-camera-plus
 ```
 
 ### Flash
 
 ```powershell
-pio run -e lilygo-t-display-s3 --target upload
+pio run -e lilygo-t-camera-plus --target upload
 ```
 
 ### Monitor
@@ -42,7 +42,7 @@ pio device monitor        # 115200 baud, with esp32_exception_decoder
 ### Build + flash + monitor in one step
 
 ```powershell
-pio run -e lilygo-t-display-s3 --target upload && pio device monitor
+pio run -e lilygo-t-camera-plus --target upload && pio device monitor
 ```
 
 ## Repository Structure
@@ -54,7 +54,7 @@ esp32-cam-rtsp/
 │   └── CMakeLists.txt       # ESP-IDF component registration
 ├── components/              # Private ESP-IDF components
 ├── partitions/
-│   └── partitions_ota.csv   # Flash layout (NVS, OTA x2, LittleFS)
+│   └── partitions_4mb_ota.csv   # Flash layout (NVS, OTA x2, LittleFS)
 ├── docs/
 │   └── adr/                 # Architecture Decision Records
 ├── scripts/

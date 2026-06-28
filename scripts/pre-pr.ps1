@@ -56,8 +56,8 @@ if ($SkipBuild) {
         Write-Host "$FAIL  'pio' not found. Install PlatformIO Core: https://docs.platformio.org/en/latest/core/installation/index.html" -ForegroundColor Red
         $failed = $true
     } else {
-        Write-Host "       Running: pio run -e lilygo-t-display-s3 ..." -ForegroundColor Gray
-        pio run -e lilygo-t-display-s3 2>&1
+        Write-Host "       Running: pio run -e lilygo-t-camera-plus ..." -ForegroundColor Gray
+        pio run -e lilygo-t-camera-plus 2>&1
         if ($LASTEXITCODE -ne 0) {
             Write-Host "$FAIL  Build failed. Fix all errors and warnings before opening PR." -ForegroundColor Red
             $failed = $true

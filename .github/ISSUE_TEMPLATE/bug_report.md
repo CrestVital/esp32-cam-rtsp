@@ -50,7 +50,7 @@ Paste the relevant log section here:
 ## Environment
 
 - **Firmware version / git commit:**
-- **Board:** LilyGo T-Display S3 (ESP32-S3)
+- **Board:** LilyGo T-Camera Plus (ESP32-D0WDQ6-V3)
 - **Camera sensor:** (OV2640 / OV5640 / other)
 - **Host OS:** (e.g. Ubuntu 22.04, Windows 11)
 - **PlatformIO version:** (output of `pio --version`)
