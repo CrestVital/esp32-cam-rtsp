@@ -1,6 +1,6 @@
 # Status — esp32-cam-rtsp
 
-**Last updated:** 2026-06-28
+**Last updated:** 2026-06-30
 **Version:** 0.0.1-dev
 **Active branch:** main
 
@@ -10,8 +10,10 @@
 
 Infrastructure components merged to main: sys_log, nvs_config (extended
 with network_mode field), app_event, power_manager, wifi_manager (with
-mutex-guarded reconnect task, cooperative shutdown), status_indicator.
-Test infrastructure (Unity host tests) in place — 82 tests across 5 suites.
+mutex-guarded reconnect task, cooperative shutdown, in-loop generation
+guard, conditional BT linker dependency, concurrent-task tripwire),
+status_indicator. Test infrastructure (Unity host tests) in place — 84
+tests across 5 suites.
 [env:native] PlatformIO environment ready — host tests runnable via both
 pio test -e native and make -f test/Makefile. Firmware builds verified on
 all three target boards (LilyGo T-Camera Plus, AI Thinker ESP32-CAM,
@@ -26,6 +28,23 @@ both GitHub Actions workflows (ESPCAMFW-53).
 ---
 
 ## What's Done
+
+- **[ESPCAMFW-55]** ✅ wifi_manager — BT REQUIRES fix (M3) + generation-guard
+  in reconnect loop (P4-B) + tripwire — `components/wifi_manager/CMakeLists.txt`
+  links `idf::bt` privately, conditional on `CONFIG_BT_CONTROLLER_ENABLED`
+  (previously missing, would fail to link with BT controller enabled);
+  `reconnect_task()` main loop now re-checks `s_reconnect_generation` under
+  `s_reconnect_mutex` immediately after `ulTaskNotifyTake()`, so a task
+  orphaned by a deinit-timeout + new init() cycle exits before calling
+  `esp_wifi_connect()` or touching `s_attempt_count` (existing
+  cleanup-section guard from ESPCAMFW-46 unchanged); new
+  `s_active_reconnect_tasks` tripwire counter (mutex-guarded
+  increment/decrement) emits `ESP_LOGE` if more than one reconnect task is
+  active simultaneously; two `TODO #ESPCAMFW-47` anchors mark the deferred
+  join-based teardown; ADR-002 documents the cooperative-shutdown model,
+  Accepted Risk R2 (stack/TCB leak on timeout path), and alternatives
+  considered; 2 new host tests (84 total, 0 failures); reviewed by Claude
+  Opus — APPROVED, no Blocker/Major findings
 
 - **[ESPCAMFW-54]** ✅ Board re-identification + data-driven abstraction —
   primary board corrected from LilyGo T-Display S3 (ESP32-S3) to LilyGo

@@ -6,6 +6,47 @@ Versioning: [Semantic Versioning](https://semver.org/)
 
 ## [Unreleased]
 
+### Fixed — ESPCAMFW-55
+
+- **M3 — BT linker dependency:** `components/wifi_manager/CMakeLists.txt` now
+  links `idf::bt` privately, conditional on `CONFIG_BT_CONTROLLER_ENABLED`
+  (`target_link_libraries(${COMPONENT_LIB} PRIVATE idf::bt)`); previously
+  `esp_bt_controller_disable()` was called with no corresponding component
+  dependency, so a build with the BT controller enabled would fail to link.
+  Builds with BT disabled are unaffected — the Bluetooth stack is not pulled
+  in.
+- **P4-B — orphaned reconnect task guard in main loop:** `reconnect_task()`
+  now re-checks `s_reconnect_generation` (via the existing
+  `reconnect_should_clear_handle()` helper) under `s_reconnect_mutex` inside
+  the main loop, immediately after `ulTaskNotifyTake()` and the
+  `s_reconnect_enabled` check. A task orphaned by a deinit-timeout + new
+  init() cycle now exits (`ESP_LOGW`) before calling `esp_wifi_connect()` and
+  before incrementing `s_attempt_count`, instead of corrupting the new
+  init cycle's reconnect state. The existing cleanup-section guard
+  (ESPCAMFW-46) is unchanged.
+- **Tripwire — concurrent reconnect task detector:** new static counter
+  `s_active_reconnect_tasks`, incremented under mutex at task start and
+  decremented in the cleanup section; emits `ESP_LOGE` if the counter
+  exceeds 1, signalling two reconnect tasks running simultaneously (a
+  protocol violation that should never occur). Reset to 0 in
+  `wifi_manager_init()`.
+- Two `TODO #ESPCAMFW-47` anchors added (cleanup section of
+  `reconnect_task()`, and the start of `wifi_manager_deinit()`) marking the
+  deferred join-based teardown that would eliminate the accepted
+  stack/TCB-leak risk (R2) on the deinit-timeout path.
+- `docs/adr/ADR-002-wifi-teardown.md` (new): documents the cooperative
+  shutdown model, the generation-guard fix, the tripwire, Accepted Risk R2,
+  and the alternatives considered (external `vTaskDelete`, full join-based
+  redesign — both rejected/deferred).
+- Test suite extended to 19 cases (from 17): added
+  `test_tripwire_counter_reset_by_init` and
+  `test_tripwire_fires_when_counter_exceeds_one`, plus test-only accessors
+  `wifi_manager_get_active_reconnect_tasks()` /
+  `wifi_manager_set_active_reconnect_tasks_for_test()` under `UNIT_TEST`.
+  `test/components/wifi_manager/test_wifi_manager.c` and
+  `test/native/test_wifi_manager/test_wifi_manager.c` kept in sync
+  (byte-for-byte identical after the sync comment).
+
 ### Changed — ESPCAMFW-54
 
 - **Board re-identification:** primary board corrected from LilyGo T-Display S3

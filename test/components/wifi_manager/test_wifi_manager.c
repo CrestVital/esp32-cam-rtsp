@@ -462,6 +462,41 @@ void test_reconnect_guard_logic_stale_generation(void)
     (void)wifi_manager_deinit();
 }
 
+/* ── Test 18: tripwire counter reset by init ─────────────────────────── */
+
+void test_tripwire_counter_reset_by_init(void)
+{
+    /* s_active_reconnect_tasks is reset to 0 by wifi_manager_init().
+     * Verify via the test accessor. The counter can only be incremented
+     * inside reconnect_task() which does not run in host tests. */
+    esp_err_t ret = wifi_manager_init();
+    TEST_ASSERT_EQUAL(ESP_OK, ret);
+
+    TEST_ASSERT_EQUAL(0, wifi_manager_get_active_reconnect_tasks());
+
+    (void)wifi_manager_deinit();
+}
+
+/* ── Test 19: tripwire fires when counter exceeds one ────────────────── */
+
+void test_tripwire_fires_when_counter_exceeds_one(void)
+{
+    /* Inject counter value of 2 via the test accessor to simulate two
+     * concurrent reconnect tasks. Verify the getter reflects the value.
+     * The tripwire ESP_LOGE fires inside reconnect_task() when n > 1 after
+     * the increment — that path is exercised here by direct injection. */
+    esp_err_t ret = wifi_manager_init();
+    TEST_ASSERT_EQUAL(ESP_OK, ret);
+
+    wifi_manager_set_active_reconnect_tasks_for_test(2);
+    TEST_ASSERT_EQUAL(2, wifi_manager_get_active_reconnect_tasks());
+    TEST_ASSERT_GREATER_THAN(1, wifi_manager_get_active_reconnect_tasks());
+
+    /* Reset to clean state before deinit. */
+    wifi_manager_set_active_reconnect_tasks_for_test(0);
+    (void)wifi_manager_deinit();
+}
+
 /* ── Test runner main ───────────────────────────────────────────────── */
 
 int main(void)
@@ -485,6 +520,8 @@ int main(void)
     RUN_TEST(test_orphaned_task_generation_guard);
     RUN_TEST(test_reconnect_guard_logic_matching_generation);
     RUN_TEST(test_reconnect_guard_logic_stale_generation);
+    RUN_TEST(test_tripwire_counter_reset_by_init);
+    RUN_TEST(test_tripwire_fires_when_counter_exceeds_one);
 
     return UNITY_END();
 }

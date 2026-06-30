@@ -124,4 +124,22 @@ uint32_t wifi_manager_get_reconnect_generation(void);
  * @return true if the task should clear s_reconnect_task, false if orphaned.
  */
 bool wifi_manager_reconnect_should_clear_handle_test(uint32_t captured_gen);
+
+/**
+ * @brief Test-only: return s_active_reconnect_tasks for tripwire
+ *        verification. Not compiled in production builds.
+ *
+ * @return Current value of s_active_reconnect_tasks.
+ */
+int  wifi_manager_get_active_reconnect_tasks(void);
+
+/**
+ * @brief Test-only: inject a value into s_active_reconnect_tasks.
+ *
+ * Bypasses the mutex intentionally since host tests run single-threaded.
+ * Not compiled in production builds.
+ *
+ * @param value  Value to set in s_active_reconnect_tasks.
+ */
+void wifi_manager_set_active_reconnect_tasks_for_test(int value);
 #endif /* UNIT_TEST */

@@ -57,6 +57,13 @@ static int   s_attempt_count = 0;
  * approaches the wraparound point. */
 static uint32_t s_reconnect_generation = 0;
 
+/* Active reconnect task counter. Incremented under s_reconnect_mutex at
+ * the start of reconnect_task() and decremented in the cleanup section.
+ * A value greater than 1 triggers an ESP_LOGE tripwire, signalling that
+ * two or more reconnect tasks are running concurrently — a protocol
+ * violation that must never occur in a correct implementation. */
+static int s_active_reconnect_tasks = 0;
+
 static bool reconnect_should_clear_handle(uint32_t captured_generation);
 
 #if defined(UNIT_TEST)
@@ -80,6 +87,21 @@ bool wifi_manager_reconnect_should_clear_handle_test(uint32_t captured_gen)
      * invocation from host tests without running reconnect_task().
      * Never call this from production code. */
     return reconnect_should_clear_handle(captured_gen);
+}
+
+int wifi_manager_get_active_reconnect_tasks(void)
+{
+    /* Return s_active_reconnect_tasks for tripwire verification in host
+     * tests. Never call from production code. */
+    return s_active_reconnect_tasks;
+}
+
+void wifi_manager_set_active_reconnect_tasks_for_test(int value)
+{
+    /* Direct injection for tripwire tests — bypasses the mutex
+     * intentionally since host tests run single-threaded. Never call from
+     * production code. */
+    s_active_reconnect_tasks = value;
 }
 #endif /* UNIT_TEST */
 
@@ -201,6 +223,20 @@ static void reconnect_task(void *param)
      * direct read would capture the new (wrong) generation. */
     uint32_t my_generation = (uint32_t)(uintptr_t)param;
 
+    /* Increment active task counter under mutex; fire tripwire if > 1.
+     * The counter must never exceed 1 — if it does, two reconnect tasks
+     * are running concurrently, which is a protocol violation. */
+    if (s_reconnect_mutex != NULL &&
+        xSemaphoreTake(s_reconnect_mutex, portMAX_DELAY) == pdTRUE) {
+        s_active_reconnect_tasks++;
+        int n = s_active_reconnect_tasks;
+        xSemaphoreGive(s_reconnect_mutex);
+        if (n > 1) {
+            ESP_LOGE(TAG,
+                "tripwire: %d reconnect tasks active simultaneously", n);
+        }
+    }
+
     while (s_reconnect_enabled && s_attempt_count < WIFI_RECONNECT_MAX_ATTEMPTS) {
         /* Compute backoff: 1s, 2s, 4s, 8s, 16s, capped at 30s.
          * The delay is applied even on the first iteration so that the
@@ -220,6 +256,23 @@ static void reconnect_task(void *param)
         /* Re-check flags since they may have changed during the wait. */
         if (!s_reconnect_enabled) {
             break;
+        }
+
+        /* Acquire mutex to safely check the generation counter.
+         * If this task's generation is stale, it has been orphaned by a
+         * deinit timeout followed by a new init cycle — exit immediately
+         * without calling esp_wifi_connect() or touching s_attempt_count. */
+        if (s_reconnect_mutex != NULL &&
+            xSemaphoreTake(s_reconnect_mutex, portMAX_DELAY) == pdTRUE) {
+            bool stale = !reconnect_should_clear_handle(my_generation);
+            xSemaphoreGive(s_reconnect_mutex);
+            if (stale) {
+                ESP_LOGW(TAG,
+                    "orphaned reconnect task (gen %lu), exiting before"
+                    " reconnect",
+                    (unsigned long)my_generation);
+                break;
+            }
         }
 
         ESP_LOGI(TAG, "Reconnect attempt %d/%d (backoff %lu ms)",
@@ -242,6 +295,8 @@ static void reconnect_task(void *param)
      * been freed, causing a FreeRTOS kernel panic on ESP32-S3. */
     if (s_reconnect_mutex != NULL &&
         xSemaphoreTake(s_reconnect_mutex, portMAX_DELAY) == pdTRUE) {
+        /* Decrement active task counter. */
+        s_active_reconnect_tasks--;
         /* Use the helper so the guard logic is testable independently of
          * the FreeRTOS scheduler. */
         if (reconnect_should_clear_handle(my_generation)) {
@@ -255,6 +310,9 @@ static void reconnect_task(void *param)
                 (unsigned long)my_generation,
                 (unsigned long)s_reconnect_generation);
         }
+        /* TODO #ESPCAMFW-47: join-based teardown (R2 — stack/TCB leak on
+         * timeout path). If deinit becomes a regular runtime path, resolve
+         * ESPCAMFW-47 first. */
         xSemaphoreGive(s_reconnect_mutex);
     }
     vTaskDelete(NULL);
@@ -279,10 +337,11 @@ esp_err_t wifi_manager_init(void)
     /* Reset reconnect state in case a previous deinit timed out while
      * the reconnect task was still running — ensures init always starts
      * from a clean slate regardless of how the previous cycle ended. */
-    s_reconnect_task    = NULL;
-    s_attempt_count     = 0;
-    s_reconnect_enabled = false;
-    s_connected         = false;
+    s_reconnect_task        = NULL;
+    s_attempt_count         = 0;
+    s_reconnect_enabled     = false;
+    s_connected             = false;
+    s_active_reconnect_tasks = 0;
     /* Advance the generation counter so any task orphaned by a previous
      * deinit timeout will detect the mismatch and exit without
      * overwriting the new task's handle. */
@@ -396,6 +455,9 @@ esp_err_t wifi_manager_deinit(void)
      * mutex, unregisters event handlers, and tears down the WiFi driver.
      * Safe to call even if not initialised. */
 
+    /* TODO #ESPCAMFW-47: if deinit becomes a regular runtime path (not
+     * just one-shot shutdown), implement join-based teardown from
+     * ESPCAMFW-47 before calling this function repeatedly. */
     /* Signal the reconnect task to exit and suppress new creations.
      * s_reconnect_enabled is a bool — single-shot write that does not
      * need mutex protection, but must be set before waking the task. */
