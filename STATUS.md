@@ -12,8 +12,8 @@ Infrastructure components merged to main: sys_log, nvs_config (extended
 with network_mode field), app_event, power_manager, wifi_manager (with
 mutex-guarded reconnect task, cooperative shutdown, in-loop generation
 guard, conditional BT linker dependency, concurrent-task tripwire),
-status_indicator. Test infrastructure (Unity host tests) in place — 84
-tests across 5 suites.
+status_indicator, sensor_registry. Test infrastructure (Unity host
+tests) in place — 92 tests across 6 suites.
 [env:native] PlatformIO environment ready — host tests runnable via both
 pio test -e native and make -f test/Makefile. Firmware builds verified on
 all three target boards (LilyGo T-Camera Plus, AI Thinker ESP32-CAM,
@@ -22,12 +22,30 @@ Olimex ESP32-POE). Primary board corrected to LilyGo T-Camera Plus
 board abstraction (Variant B) introduced — board data in `boards/<board>.h`,
 dispatch via `#include CONFIG_BOARD_DATA_FILE` from Kconfig; adding a new
 board requires no changes to `board.h` or any `.c` file (ESPCAMFW-54).
+Data-driven sensor registry added — sensor data in `sensors/<sensor>.h`,
+dispatch via `#include CONFIG_SENSOR_DATA_FILE` from Kconfig, with
+compile-time DVP/MIPI interface-safety checks; adding a DVP sensor needs
+no changes to `sensor_caps.h` or any `.c` file (ESPCAMFW-56).
 CI hardened — GITHUB_TOKEN restricted to least-privilege permissions in
 both GitHub Actions workflows (ESPCAMFW-53).
 
 ---
 
 ## What's Done
+
+- **[ESPCAMFW-56]** ✅ Data-driven sensor registry + DVP/MIPI interface
+  classification — `sensors/ov2640.h` / `sensors/ov5640.h` (pure `#define`),
+  dispatcher `include/sensor_caps.h` (`#include CONFIG_SENSOR_DATA_FILE`, no
+  sensor enumeration), new Kconfig-only component
+  `components/sensor_registry/` (`choice SENSOR_TARGET`, default
+  `SENSOR_OV2640`, mechanic (ii): per-board sdkconfig fragment selects the
+  sensor); `BOARD_HAS_MIPI_CSI`/`BOARD_HAS_ISP` flags added to all three
+  board files with completeness checks in `board.h`; compile-time `#error`
+  guards block MIPI/ISP sensors on non-MIPI/non-ISP boards (ref ESPCAMFW-49,
+  ADR-007); ADR-006 documents the registry, the (i)/(ii) decision, and the
+  data-vs-driver and DVP/MIPI boundaries; 8 new host tests (92 total across
+  6 suites, 0 failures); reviewed by Claude Opus — APPROVED WITH SUGGESTIONS,
+  no Blocker/Critical findings (test asserts strengthened post-review)
 
 - **[ESPCAMFW-55]** ✅ wifi_manager — BT REQUIRES fix (M3) + generation-guard
   in reconnect loop (P4-B) + tripwire — `components/wifi_manager/CMakeLists.txt`

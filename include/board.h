@@ -39,6 +39,14 @@
 #error "Board data file missing: BOARD_HAS_DISPLAY"
 #endif
 
+#ifndef BOARD_HAS_MIPI_CSI
+#error "Board data file missing: BOARD_HAS_MIPI_CSI"
+#endif
+
+#ifndef BOARD_HAS_ISP
+#error "Board data file missing: BOARD_HAS_ISP"
+#endif
+
 #ifndef BOARD_PSRAM_SIZE_MB
 #error "Board data file missing: BOARD_PSRAM_SIZE_MB"
 #endif

@@ -1,6 +1,9 @@
 # Board selection
 CONFIG_BOARD_LILYGO_T_CAMERA_PLUS=y
 
+# Sensor selection
+CONFIG_SENSOR_OV2640=y
+
 # Status indicator: display present
 CONFIG_STATUS_INDICATOR_HAS_DISPLAY=y
 
