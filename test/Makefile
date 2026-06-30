@@ -63,16 +63,26 @@ SRCS_STATUS_INDICATOR = third-party/unity/unity.c \
                         components/status_indicator/status_indicator.c \
                         test/components/status_indicator/test_status_indicator.c
 
+CFLAGS_SENSOR_REGISTRY = $(CFLAGS_COMMON) \
+                         -I. \
+                         -Iinclude \
+                         -Isensors
+
+SRCS_SENSOR_REGISTRY = third-party/unity/unity.c \
+                       test/components/sensor_registry/test_sensor_registry.c
+
 .PHONY: all clean test_nvs test_app_event test_power_mgr test_wifi_mgr \
-        test_status_indicator
+        test_status_indicator test_sensor_registry
 
 all: test_runner_nvs test_runner_app_event test_runner_power_mgr \
-     test_runner_wifi_manager test_runner_status_indicator
+     test_runner_wifi_manager test_runner_status_indicator \
+     test_runner_sensor_registry
 	./test_runner_nvs
 	./test_runner_app_event
 	./test_runner_power_mgr
 	./test_runner_wifi_manager
 	./test_runner_status_indicator
+	./test_runner_sensor_registry
 
 test_runner_nvs: $(SRCS_NVS)
 	$(CC) $(CFLAGS_NVS) $(SRCS_NVS) -o test_runner_nvs
@@ -104,6 +114,13 @@ test_runner_status_indicator: $(SRCS_STATUS_INDICATOR)
 test_status_indicator: test_runner_status_indicator
 	./test_runner_status_indicator
 
+test_runner_sensor_registry: $(SRCS_SENSOR_REGISTRY)
+	$(CC) $(CFLAGS_SENSOR_REGISTRY) $(SRCS_SENSOR_REGISTRY) -o test_runner_sensor_registry
+
+test_sensor_registry: test_runner_sensor_registry
+	./test_runner_sensor_registry
+
 clean:
 	rm -f test_runner_nvs test_runner_app_event test_runner_power_mgr \
-	      test_runner_wifi_manager test_runner_status_indicator
+	      test_runner_wifi_manager test_runner_status_indicator \
+	      test_runner_sensor_registry

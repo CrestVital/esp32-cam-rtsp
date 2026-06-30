@@ -1,0 +1,29 @@
+menu "Sensor Selection"
+
+    choice SENSOR_TARGET
+        prompt "Target sensor"
+        default SENSOR_OV2640
+        help
+            Select the camera sensor. This choice sets CONFIG_SENSOR_DATA_FILE
+            to the corresponding sensors/<sensor>.h data file, which is included
+            by include/sensor_caps.h at compile time.
+            To add a new sensor, create sensors/<new>.h and add an entry here.
+
+        config SENSOR_OV2640
+            bool "OV2640 (OmniVision, 2 MP, DVP, embedded JPEG encoder)"
+
+        config SENSOR_OV5640
+            bool "OV5640 (OmniVision, 5 MP, DVP)"
+
+    endchoice
+
+    config SENSOR_DATA_FILE
+        string
+        default "sensors/ov2640.h" if SENSOR_OV2640
+        default "sensors/ov5640.h" if SENSOR_OV5640
+        help
+            Path to the sensor data header file, relative to the include path
+            configured in components/sensor_registry/CMakeLists.txt.
+            Consumed by include/sensor_caps.h via: #include CONFIG_SENSOR_DATA_FILE
+
+endmenu

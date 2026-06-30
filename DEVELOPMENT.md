@@ -163,6 +163,48 @@ If the board data file is missing any required macro, the build fails with a
 All boards use the DVP (parallel 8-bit) camera interface. MIPI CSI-2 is not
 supported on these ESP32 variants without an external ISP.
 
+## Sensor Registry
+
+The firmware supports multiple OV-based camera sensors. Sensor-specific capability
+data (interface type, resolution, ISP requirement, driver availability) is isolated
+in `sensors/<name>.h` data files (pure `#define` macros, no logic).
+
+`include/sensor_caps.h` includes the selected sensor file via `#include CONFIG_SENSOR_DATA_FILE`,
+where `CONFIG_SENSOR_DATA_FILE` is a Kconfig string option set in
+`components/sensor_registry/Kconfig.projbuild`. This mirrors the data-driven board
+abstraction (Variant B — see `docs/adr/ADR-004-board-abstraction.md` and
+`docs/adr/ADR-006-sensor-registry.md`).
+
+### How to add a sensor
+
+1. Create `sensors/<new_sensor>.h` with all required `#define` macros
+   (SENSOR_NAME, SENSOR_VENDOR, SENSOR_IFACE, SENSOR_REQUIRES_ISP,
+   SENSOR_MAX_WIDTH, SENSOR_MAX_HEIGHT, SENSOR_MAX_FPS, SENSOR_HAS_DRIVER).
+   Copy an existing sensor file as a template.
+2. Add entries in `components/sensor_registry/Kconfig.projbuild`:
+   - One `config SENSOR_<NEW_SENSOR>` bool in the `choice SENSOR_TARGET` block.
+   - One `default "sensors/<new_sensor>.h" if SENSOR_<NEW_SENSOR>` line in
+     `config SENSOR_DATA_FILE`.
+3. Set the sensor selection in each board's `sdkconfig.defaults.<board>` fragment
+   (e.g. `CONFIG_SENSOR_<NEW_SENSOR>=y`).
+4. That is all. No changes to `include/sensor_caps.h` or any `.c` file are required.
+
+If the sensor data file is missing any required macro, the build fails with a
+`#error` message naming the missing macro.
+
+The registry classifies the camera interface as DVP (parallel 8-bit) or
+MIPI CSI-2. Building a MIPI CSI-2 or ISP-requiring sensor on a non-MIPI/non-ISP
+board fails at compile time with a `#error` referencing epic ESPCAMFW-49 and
+ADR-007. This ensures the hardware boundary is enforced before any code reaches
+the device.
+
+### Supported sensors
+
+| Kconfig choice | Sensor | Interface | Max Resolution | Max FPS | ISP Required |
+|---|---|---|---|---|---|
+| `SENSOR_OV2640` | OV2640 (OmniVision) | DVP | 1600×1200 | 60 | No |
+| `SENSOR_OV5640` | OV5640 (OmniVision) | DVP | 2592×1944 | 60 | No |
+
 ---
 
 ## Open Questions

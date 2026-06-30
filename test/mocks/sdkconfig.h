@@ -16,3 +16,11 @@
 
 /* Board selection for host-side tests: simulate AI Thinker ESP32-CAM. */
 #define CONFIG_BOARD_AI_THINKER_ESP32_CAM  1
+
+/* Board data file path — normally set by Kconfig, provided explicitly for
+ * host tests so that board.h can resolve its computed include. */
+#define CONFIG_BOARD_DATA_FILE             "boards/ai_thinker_esp32_cam.h"
+
+/* Sensor data file path — normally set by Kconfig, provided explicitly for
+ * host tests so that sensor_caps.h can resolve its computed include. */
+#define CONFIG_SENSOR_DATA_FILE            "sensors/ov2640.h"

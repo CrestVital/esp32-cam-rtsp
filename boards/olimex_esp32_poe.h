@@ -13,6 +13,8 @@
 #define BOARD_HAS_WIFI          0
 #define BOARD_HAS_ETHERNET      1
 #define BOARD_HAS_DISPLAY       0
+#define BOARD_HAS_MIPI_CSI      0
+#define BOARD_HAS_ISP           0
 #define BOARD_PSRAM_SIZE_MB     0
 
 #define BOARD_SENSOR_OV2640     1

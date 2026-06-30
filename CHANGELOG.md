@@ -6,6 +6,63 @@ Versioning: [Semantic Versioning](https://semver.org/)
 
 ## [Unreleased]
 
+### Added — ESPCAMFW-56
+
+- **Data-driven sensor registry (Variant B):** mirrors the board abstraction
+  (ADR-004) for camera sensors. Sensor capability data lives in
+  `sensors/<sensor>.h` as pure `#define` macros; `include/sensor_caps.h` is a
+  dispatcher that includes the Kconfig-selected file via
+  `#include CONFIG_SENSOR_DATA_FILE` (no sensor enumeration / `#if`-chain),
+  then performs compile-time completeness and interface-safety validation.
+  Adding a DVP sensor now requires only a new `sensors/<sensor>.h` + Kconfig
+  entries + per-board fragment selection — no changes to `sensor_caps.h` or
+  any `.c` file.
+- `sensors/ov2640.h` — OmniVision OV2640, DVP, no ISP, 1600×1200, 60 fps,
+  has_driver=1; `sensors/ov5640.h` — OmniVision OV5640, DVP, no ISP,
+  2592×1944, 60 fps, has_driver=1. Sensor data model: `SENSOR_NAME`,
+  `SENSOR_VENDOR`, `SENSOR_IFACE`, `SENSOR_REQUIRES_ISP`, `SENSOR_MAX_WIDTH`,
+  `SENSOR_MAX_HEIGHT`, `SENSOR_MAX_FPS`, `SENSOR_HAS_DRIVER`.
+- **Interface classification + compile-time safety:** `SENSOR_IFACE` is one of
+  the preprocessor constants `SENSOR_IFACE_DVP` (1) / `SENSOR_IFACE_MIPI_CSI2`
+  (2) — defined as `#define` (not a C `enum`) so they evaluate correctly in
+  `#if`. `sensor_caps.h` `#error`s if the active sensor uses MIPI CSI-2 while
+  the board lacks MIPI (`BOARD_HAS_MIPI_CSI == 0`), or requires an ISP while
+  the board lacks one (`BOARD_HAS_ISP == 0`); both messages reference epic
+  ESPCAMFW-49 and ADR-007. The registry knows about MIPI_CSI2 but is populated
+  only with DVP sensors (DVP/MIPI hardware boundary per ADR-006).
+- `components/sensor_registry/` — new Kconfig-only component:
+  `Kconfig.projbuild` provides `choice SENSOR_TARGET`
+  (`SENSOR_OV2640` / `SENSOR_OV5640`, default `SENSOR_OV2640`) and the
+  `CONFIG_SENSOR_DATA_FILE` string option; `CMakeLists.txt` adds `sensors/`
+  and `include/` to the include path so the dispatcher resolves for consumers.
+  Sensor selection mechanic (ii): each board's `sdkconfig.defaults.<board>`
+  fragment pins the sensor (mirrors `CONFIG_BOARD_<X>=y`).
+- `docs/adr/ADR-006-sensor-registry.md` (new): documents the registry, the
+  rejected `#if/#elif` variant (i) and the accepted `choice`-based variant
+  (ii), the data-vs-driver boundary (`SENSOR_HAS_DRIVER`; real capture is
+  epic ESPCAMFW-2), and the DVP-vs-MIPI/ISP hardware boundary.
+- 8 Unity host tests (`test/components/sensor_registry/test_sensor_registry.c`)
+  — compile-only verification of the dispatch plus exact-value assertions on
+  the resolved sensor (name, vendor, dimensions, fps, iface, driver, ISP).
+  Host suite now **92 tests across 6 suites, 0 failures**.
+
+### Changed — ESPCAMFW-56
+
+- `boards/lilygo_t_camera_plus.h`, `boards/ai_thinker_esp32_cam.h`,
+  `boards/olimex_esp32_poe.h`: added `BOARD_HAS_MIPI_CSI 0` and
+  `BOARD_HAS_ISP 0` capability flags (all current ESP32/ESP32-S3 boards have
+  neither); `include/board.h`: matching `#ifndef`/`#error` completeness checks.
+- `sdkconfig.defaults.lilygo-t-camera-plus`, `.ai-thinker-esp32-cam`,
+  `.olimex-esp32-poe`: added `CONFIG_SENSOR_OV2640=y` so each board resolves
+  `CONFIG_SENSOR_DATA_FILE` to `sensors/ov2640.h`.
+- `src/CMakeLists.txt`: `sensor_registry` added to `REQUIRES`.
+- `test/mocks/sdkconfig.h`: added `CONFIG_SENSOR_DATA_FILE "sensors/ov2640.h"`
+  for host builds; `test/Makefile`: new `test_runner_sensor_registry` target
+  (`-I. -Iinclude -Isensors`) wired into `all`/`clean`.
+- `DEVELOPMENT.md`: new "How to add a sensor" guidance under the registry
+  section, in the style of "How to add a board".
+
+
 ### Fixed — ESPCAMFW-55
 
 - **M3 — BT linker dependency:** `components/wifi_manager/CMakeLists.txt` now
