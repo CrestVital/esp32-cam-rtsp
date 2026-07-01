@@ -16,8 +16,9 @@
 #define BOARD_HAS_ISP           0
 #define BOARD_PSRAM_SIZE_MB     4
 
+/* Supported sensor set (not exclusive selection) -- see ADR-008. */
 #define BOARD_SENSOR_OV2640     1
-#define BOARD_SENSOR_OV5640     0
+#define BOARD_SENSOR_OV5640     1
 
 #define BOARD_CAM_PIN_PWDN      32
 #define BOARD_CAM_PIN_RESET     (-1)

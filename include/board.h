@@ -59,14 +59,6 @@
 #error "Board data file missing: BOARD_SENSOR_OV5640"
 #endif
 
-#if !BOARD_SENSOR_OV2640 && !BOARD_SENSOR_OV5640
-#error "Board data file must define exactly one sensor: BOARD_SENSOR_OV2640=1 or BOARD_SENSOR_OV5640=1"
-#endif
-
-#if BOARD_SENSOR_OV2640 && BOARD_SENSOR_OV5640
-#error "Board data file must not set both BOARD_SENSOR_OV2640=1 and BOARD_SENSOR_OV5640=1"
-#endif
-
 #ifndef BOARD_CAM_PIN_PWDN
 #error "Board data file missing: BOARD_CAM_PIN_PWDN"
 #endif

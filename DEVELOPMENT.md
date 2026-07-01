@@ -55,6 +55,11 @@ frame-ready ISR.
 | PSRAM frame buffer pool (3 buffers) | — | To Do |
 | Frame-ready ISR → FreeRTOS queue | — | To Do |
 
+> Note: a universal firmware image with runtime sensor auto-detection (one
+> binary that probes for OV2640 vs OV5640 at boot) is considered separately in
+> ESPCAMFW-83 — not implemented now. The current model ships one image per
+> board×sensor pair (see `docs/adr/ADR-008-board-sensor-build-matrix.md`).
+
 **Acceptance criteria:**
 - `camera_init()` returns `ESP_OK` with OV2640 attached
 - 3 frame buffers allocated from PSRAM (MALLOC_CAP_SPIRAM)
@@ -154,11 +159,11 @@ If the board data file is missing any required macro, the build fails with a
 
 ### Supported boards
 
-| PlatformIO env | Board | MCU | Camera | Network | PSRAM |
+| Board id | Board | MCU | Camera | Network | PSRAM |
 |---|---|---|---|---|---|
-| `lilygo-t-camera-plus` | LilyGo T-Camera Plus | ESP32-D0WDQ6-V3 | OV2640 | WiFi | 8 MB quad |
-| `ai-thinker-esp32-cam` | AI Thinker ESP32-CAM | ESP32 | OV2640 | WiFi | 4 MB |
-| `olimex-esp32-poe` | Olimex ESP32-POE | ESP32 | OV2640 | Ethernet | none |
+| `lilygo-t-camera-plus` | LilyGo T-Camera Plus | ESP32-D0WDQ6-V3 | OV2640, OV5640 | WiFi | 8 MB quad |
+| `ai-thinker-esp32-cam` | AI Thinker ESP32-CAM | ESP32 | OV2640, OV5640 | WiFi | 4 MB |
+| `olimex-esp32-poe` | Olimex ESP32-POE | ESP32 | OV2640, OV5640 | Ethernet | none |
 
 All boards use the DVP (parallel 8-bit) camera interface. MIPI CSI-2 is not
 supported on these ESP32 variants without an external ISP.
@@ -179,15 +184,20 @@ abstraction (Variant B — see `docs/adr/ADR-004-board-abstraction.md` and
 
 1. Create `sensors/<new_sensor>.h` with all required `#define` macros
    (SENSOR_NAME, SENSOR_VENDOR, SENSOR_IFACE, SENSOR_REQUIRES_ISP,
-   SENSOR_MAX_WIDTH, SENSOR_MAX_HEIGHT, SENSOR_MAX_FPS, SENSOR_HAS_DRIVER).
+   SENSOR_MAX_WIDTH, SENSOR_MAX_HEIGHT, SENSOR_MAX_FPS, SENSOR_HAS_DRIVER,
+   SENSOR_BOARD_SUPPORT_FLAG -- see `docs/adr/ADR-008-board-sensor-build-matrix.md`).
    Copy an existing sensor file as a template.
 2. Add entries in `components/sensor_registry/Kconfig.projbuild`:
    - One `config SENSOR_<NEW_SENSOR>` bool in the `choice SENSOR_TARGET` block.
    - One `default "sensors/<new_sensor>.h" if SENSOR_<NEW_SENSOR>` line in
      `config SENSOR_DATA_FILE`.
-3. Set the sensor selection in each board's `sdkconfig.defaults.<board>` fragment
-   (e.g. `CONFIG_SENSOR_<NEW_SENSOR>=y`).
-4. That is all. No changes to `include/sensor_caps.h` or any `.c` file are required.
+3. Create a `sdkconfig.sensor.<new_sensor>` fragment (e.g. `CONFIG_SENSOR_<NEW_SENSOR>=y`)
+   and reference it from `board_build.sdkconfig_defaults` in `platformio.ini` for each
+   board×sensor environment that should support it. Sensor selection is **not** set in
+   `sdkconfig.defaults.<board>` -- board and sensor fragments are split (see ADR-008).
+4. Set `BOARD_SENSOR_<NEW_SENSOR>=1` in every `boards/<board>.h` that physically
+   supports the new sensor.
+5. That is all. No changes to `include/sensor_caps.h` or any `.c` file are required.
 
 If the sensor data file is missing any required macro, the build fails with a
 `#error` message naming the missing macro.
@@ -200,10 +210,33 @@ the device.
 
 ### Supported sensors
 
-| Kconfig choice | Sensor | Interface | Max Resolution | Max FPS | ISP Required |
-|---|---|---|---|---|---|
-| `SENSOR_OV2640` | OV2640 (OmniVision) | DVP | 1600×1200 | 60 | No |
-| `SENSOR_OV5640` | OV5640 (OmniVision) | DVP | 2592×1944 | 60 | No |
+| Kconfig choice | Sensor | Interface | Max Resolution | Max FPS | ISP Required | Supported boards |
+|---|---|---|---|---|---|---|
+| `SENSOR_OV2640` | OV2640 (OmniVision) | DVP | 1600×1200 | 60 | No | All three |
+| `SENSOR_OV5640` | OV5640 (OmniVision) | DVP | 2592×1944 | 60 | No | All three |
+
+## Board × Sensor Build Matrix
+
+The camera module is physically detachable (FFC connector); all three boards
+accept both DVP sensors. Board and sensor selection are orthogonal: the board is
+chosen via `CONFIG_BOARD_DATA_FILE` and the sensor via `CONFIG_SENSOR_DATA_FILE`.
+The build system emits one firmware image per valid board×sensor pair. Each
+PlatformIO environment composes a shared fragment, a board fragment, and a sensor
+fragment (`sdkconfig.sensor.<sensor>`).
+
+A compile-time cross-check in `include/sensor_caps.h` fails the build if the
+active sensor is not in the active board's supported set (`BOARD_SENSOR_*`
+flags), so only valid pairs compile. See
+`docs/adr/ADR-008-board-sensor-build-matrix.md`.
+
+| PlatformIO env | Board | Sensor |
+|---|---|---|
+| `lilygo-t-camera-plus-ov2640` | LilyGo T-Camera Plus | OV2640 |
+| `lilygo-t-camera-plus-ov5640` | LilyGo T-Camera Plus | OV5640 |
+| `ai-thinker-esp32-cam-ov2640` | AI Thinker ESP32-CAM | OV2640 |
+| `ai-thinker-esp32-cam-ov5640` | AI Thinker ESP32-CAM | OV5640 |
+| `olimex-esp32-poe-ov2640` | Olimex ESP32-POE | OV2640 |
+| `olimex-esp32-poe-ov5640` | Olimex ESP32-POE | OV5640 |
 
 ---
 

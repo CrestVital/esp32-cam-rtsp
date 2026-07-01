@@ -19,3 +19,9 @@
 #define SENSOR_MAX_HEIGHT      1200
 #define SENSOR_MAX_FPS         60
 #define SENSOR_HAS_DRIVER      1
+
+/* Indirection so sensor_caps.h can cross-check "is this sensor in the set
+ * supported by the active board" without hardcoding sensor names -- see
+ * ADR-008. Must be evaluated AFTER board.h is included (sensor_caps.h
+ * guarantees this ordering; do not reorder its includes). */
+#define SENSOR_BOARD_SUPPORT_FLAG   BOARD_SENSOR_OV2640

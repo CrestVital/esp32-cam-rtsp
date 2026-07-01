@@ -18,9 +18,12 @@ jobs:
       fail-fast: false
       matrix:
         env:
-          - lilygo-t-camera-plus
-          - ai-thinker-esp32-cam
-          - olimex-esp32-poe
+          - lilygo-t-camera-plus-ov2640
+          - lilygo-t-camera-plus-ov5640
+          - ai-thinker-esp32-cam-ov2640
+          - ai-thinker-esp32-cam-ov5640
+          - olimex-esp32-poe-ov2640
+          - olimex-esp32-poe-ov5640
 
     steps:
       - uses: actions/checkout@v4
