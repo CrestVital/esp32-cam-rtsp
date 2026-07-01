@@ -7,14 +7,15 @@
 build/
 
 # ESP-IDF configuration files
-!sdkconfig.defaults
-!sdkconfig.defaults.*
-!sdkconfig.sensor.*
 sdkconfig
 sdkconfig.old
 sdkconfig.*
 
+!sdkconfig.defaults
+!sdkconfig.defaults.*
+!sdkconfig.sensor.*
 !test/mocks/sdkconfig.h
+
 managed_components/
 
 # IDE
