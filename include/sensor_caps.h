@@ -7,9 +7,15 @@
  * then performs compile-time completeness and interface-safety validation.
  *
  * To add a new sensor:
- *   1. Create sensors/<new_sensor>.h with all required #define macros.
+ *   1. Create sensors/<new_sensor>.h with all required #define macros,
+ *      including SENSOR_BOARD_SUPPORT_FLAG (see ADR-008).
  *   2. Add entries in components/sensor_registry/Kconfig.projbuild.
- *   3. Add sensor selection to each board's sdkconfig.defaults.<board> fragment.
+ *   3. Create a sdkconfig.sensor.<new_sensor> fragment and reference it from
+ *      the relevant board_build.sdkconfig_defaults env(s) in platformio.ini.
+ *      Sensor selection is NOT set in sdkconfig.defaults.<board> -- board and
+ *      sensor fragments are split (see ADR-008).
+ *   4. Set BOARD_SENSOR_<NEW_SENSOR>=1 in every boards/<board>.h that
+ *      physically supports the new sensor.
  *   No changes to this file or any .c file are required.
  *
  * For host-side unit tests, test/mocks/sdkconfig.h provides
@@ -66,6 +72,10 @@
 #error "Sensor data file missing: SENSOR_HAS_DRIVER"
 #endif
 
+#ifndef SENSOR_BOARD_SUPPORT_FLAG
+#error "Sensor data file missing: SENSOR_BOARD_SUPPORT_FLAG"
+#endif
+
 /* ---- Interface validity check -------------------------------------------- */
 
 #if (SENSOR_IFACE != SENSOR_IFACE_DVP) && (SENSOR_IFACE != SENSOR_IFACE_MIPI_CSI2)
@@ -80,4 +90,10 @@
 
 #if (SENSOR_REQUIRES_ISP == 1) && (BOARD_HAS_ISP == 0)
 #error "Active sensor requires an ISP but the selected board has no ISP. MIPI/ISP support is ESP32-P4 only — see epic ESPCAMFW-49 and ADR-007."
+#endif
+
+/* ---- Board-support cross-check: sensor must be in the board's supported set --- */
+
+#if !SENSOR_BOARD_SUPPORT_FLAG
+#error "Active sensor is not in the board's supported sensor set (see BOARD_SENSOR_* flags in the active board data file). See ADR-008."
 #endif

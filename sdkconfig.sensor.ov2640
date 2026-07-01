@@ -1,0 +1,2 @@
+# Sensor selection
+CONFIG_SENSOR_OV2640=y

@@ -6,6 +6,72 @@ Versioning: [Semantic Versioning](https://semver.org/)
 
 ## [Unreleased]
 
+### Added — ESPCAMFW-82
+
+- **Board × sensor build matrix:** the build system now emits one firmware
+  image per valid board×sensor pair. All three boards (LilyGo T-Camera Plus,
+  AI Thinker ESP32-CAM, Olimex ESP32-POE) are confirmed to physically support
+  both OV2640 and OV5640 via the FFC connector, giving the full 3×2 = 6 pairs.
+- `sdkconfig.sensor.ov2640`, `sdkconfig.sensor.ov5640` (new): sensor-only
+  sdkconfig fragments, split out of the per-board fragments so N boards ×
+  M sensors doesn't duplicate the sensor-selection line. `platformio.ini`
+  composes each of the 6 environments from `sdkconfig.defaults` +
+  `sdkconfig.defaults.<board>` + `sdkconfig.sensor.<sensor>`.
+- 6 new PlatformIO environments (`<board>-<sensor>` naming):
+  `lilygo-t-camera-plus-ov2640`/`-ov5640`, `ai-thinker-esp32-cam-ov2640`/
+  `-ov5640`, `olimex-esp32-poe-ov2640`/`-ov5640` — replace the previous 3
+  board-only environments. `default_envs` = `lilygo-t-camera-plus-ov2640`.
+- `SENSOR_BOARD_SUPPORT_FLAG` (new per-sensor macro in `sensors/ov2640.h` /
+  `sensors/ov5640.h`): indirection pointing at the matching `BOARD_SENSOR_OV*`
+  flag, letting `include/sensor_caps.h` cross-check "is the active sensor in
+  the set supported by the active board" without hardcoding sensor names —
+  preserves the open/closed property of the registry (ADR-006). Deliberately
+  independent of the `CONFIG_SENSOR_OV*` Kconfig bool so it also holds under
+  host tests, where `test/mocks/sdkconfig.h` sets `CONFIG_SENSOR_DATA_FILE`
+  directly and never defines that bool.
+- `include/sensor_caps.h`: new completeness check for
+  `SENSOR_BOARD_SUPPORT_FLAG` and a new cross-check `#error` firing when the
+  active sensor is not in the active board's supported set.
+- `.github/workflows/ci.yml`: build matrix expanded from 3 to 6 environments
+  (`permissions:` unchanged).
+- `docs/adr/ADR-008-board-sensor-build-matrix.md` (new): documents the
+  accepted Variant A for `BOARD_SENSOR_OV*` (supported-sensor set, rejected
+  Variant B — full removal), the `SENSOR_BOARD_SUPPORT_FLAG` indirection and
+  its host-test rationale, the env naming scheme, `default_envs`, the
+  sdkconfig fragment split, and the confirmed 6-pair matrix.
+- `DEVELOPMENT.md`: "Supported boards" / "Supported sensors" tables updated
+  (OV5640 now listed for all three boards); new "Board × Sensor Build
+  Matrix" section with the full env table; "How to add a sensor"
+  instructions corrected to describe the new sensor-fragment mechanism
+  (previously stale — still referred to setting the sensor in the board
+  fragment); one-line forward reference to ESPCAMFW-83 (universal runtime
+  auto-detect firmware, not implemented here) added under `camera_driver`.
+- `include/sensor_caps.h`'s own "To add a new sensor" doc comment: same
+  staleness fix as `DEVELOPMENT.md` above.
+- `.gitignore`: added `!sdkconfig.sensor.*` negation — the new sensor
+  fragments would otherwise have been silently swallowed by the existing
+  `sdkconfig.*` ignore rule, breaking all 6 CI builds on a fresh checkout
+  (caught in code review, fixed before merge).
+
+### Changed — ESPCAMFW-82
+
+- `boards/ai_thinker_esp32_cam.h`, `boards/lilygo_t_camera_plus.h`,
+  `boards/olimex_esp32_poe.h`: `BOARD_SENSOR_OV5640` changed from `0` to `1`
+  in all three files — `BOARD_SENSOR_OV*` is now a **set** of supported
+  sensors, not an exclusive selection.
+- `include/board.h`: removed the two `#error` guards that previously
+  enforced "exactly one of `BOARD_SENSOR_OV2640`/`BOARD_SENSOR_OV5640` may be
+  1" — this constraint directly conflicted with the independent sensor
+  selection introduced in ESPCAMFW-56 and is superseded by the new
+  cross-check in `sensor_caps.h`. The `#ifndef` completeness checks for both
+  flags are unchanged.
+- `sdkconfig.defaults.lilygo-t-camera-plus`, `.ai-thinker-esp32-cam`,
+  `.olimex-esp32-poe`: removed the `CONFIG_SENSOR_OV2640=y` line — sensor
+  selection now lives exclusively in the new `sdkconfig.sensor.<sensor>`
+  fragments.
+- Host suite unchanged: **92 tests across 6 suites, 0 failures** (this
+  ticket touches build/Kconfig configuration, not test sources).
+
 ### Added — ESPCAMFW-56
 
 - **Data-driven sensor registry (Variant B):** mirrors the board abstraction

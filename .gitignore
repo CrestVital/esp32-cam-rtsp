@@ -5,12 +5,17 @@
 
 # ESP-IDF build artifacts
 build/
+
+# ESP-IDF configuration files
 sdkconfig
 sdkconfig.old
 sdkconfig.*
+
 !sdkconfig.defaults
 !sdkconfig.defaults.*
+!sdkconfig.sensor.*
 !test/mocks/sdkconfig.h
+
 managed_components/
 
 # IDE

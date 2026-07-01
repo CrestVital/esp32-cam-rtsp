@@ -1,6 +1,6 @@
 # Status — esp32-cam-rtsp
 
-**Last updated:** 2026-06-30
+**Last updated:** 2026-07-01
 **Version:** 0.0.1-dev
 **Active branch:** main
 
@@ -27,11 +27,38 @@ dispatch via `#include CONFIG_SENSOR_DATA_FILE` from Kconfig, with
 compile-time DVP/MIPI interface-safety checks; adding a DVP sensor needs
 no changes to `sensor_caps.h` or any `.c` file (ESPCAMFW-56).
 CI hardened — GITHUB_TOKEN restricted to least-privilege permissions in
-both GitHub Actions workflows (ESPCAMFW-53).
+both GitHub Actions workflows (ESPCAMFW-53). Board × sensor build matrix
+introduced — `platformio.ini` now emits 6 firmware images (3 boards ×
+2 sensors, all pairs confirmed valid by hardware), `BOARD_SENSOR_OV*`
+redefined as a supported-sensor set, compile-time cross-check enforces
+valid pairs (ESPCAMFW-82).
 
 ---
 
 ## What's Done
+
+- **[ESPCAMFW-82]** ✅ Board × sensor build matrix — `BOARD_SENSOR_OV*`
+  redefined as a supported-sensor **set** (not exclusive selection) in all
+  three board files; mutual-exclusion `#error` guards removed from
+  `include/board.h` (completeness checks unchanged); new
+  `SENSOR_BOARD_SUPPORT_FLAG` indirection in `sensors/ov2640.h`/`ov5640.h`
+  drives a compile-time cross-check in `sensor_caps.h` (active sensor must
+  be ∈ the active board's supported set), deliberately independent of the
+  `CONFIG_SENSOR_OV*` Kconfig bool so it also holds under host tests
+  (`test/mocks/sdkconfig.h` sets `CONFIG_SENSOR_DATA_FILE` directly); sdkconfig
+  fragments split into board-only + new `sdkconfig.sensor.<sensor>`;
+  `platformio.ini` now defines 6 environments (`<board>-<sensor>`, all 3
+  boards × both sensors — all three confirmed to physically support OV5640
+  via FFC); CI `matrix.env` expanded to match (`permissions:` unchanged);
+  ADR-008 documents the decision; `DEVELOPMENT.md` updated (tables, new
+  Build Matrix section, corrected "How to add a sensor" steps, previously
+  stale after this change); reviewed by Claude Opus — 1 Critical (new sensor
+  fragments were silently `.gitignore`d, would have red-CI'd all 6 envs on a
+  fresh checkout) + 1 Minor (misleading env names in the Boards table), both
+  fixed before merge; spin-off ticket ESPCAMFW-83 created for a possible
+  future runtime auto-detect "universal" firmware image (backlog, blocked on
+  `camera_driver`); host suite unchanged at 92 tests across 6 suites, 0
+  failures
 
 - **[ESPCAMFW-56]** ✅ Data-driven sensor registry + DVP/MIPI interface
   classification — `sensors/ov2640.h` / `sensors/ov5640.h` (pure `#define`),
@@ -162,7 +189,9 @@ both GitHub Actions workflows (ESPCAMFW-53).
 
 ## Open Tickets (spin-offs)
 
-*(none)*
+- **[ESPCAMFW-83]** Universal firmware — runtime sensor auto-detect + driver
+  dispatch (backlog, blocked on the first `camera_driver` implementation;
+  placeholder ticket under epic ESPCAMFW-2, ADR pending)
 
 ---
 
