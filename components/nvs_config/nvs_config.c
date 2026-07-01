@@ -4,6 +4,7 @@
 #include "esp_err.h"
 #include "nvs_flash.h"
 #include "nvs.h"
+#include "sensor_caps.h"
 #include "nvs_config.h"
 
 static const char *TAG = "nvs_config";
@@ -37,11 +38,11 @@ static const char *TAG = "nvs_config";
 
 #define RTSP_PORT_MIN        1
 #define CAM_WIDTH_MIN        160
-#define CAM_WIDTH_MAX        1920
+#define CAM_WIDTH_MAX        SENSOR_MAX_WIDTH
 #define CAM_HEIGHT_MIN       120
-#define CAM_HEIGHT_MAX       1080
+#define CAM_HEIGHT_MAX       SENSOR_MAX_HEIGHT
 #define CAM_FPS_MIN          1
-#define CAM_FPS_MAX          60
+#define CAM_FPS_MAX          SENSOR_MAX_FPS
 #define CAM_BRIGHTNESS_MIN   (-2)
 #define CAM_BRIGHTNESS_MAX   2
 

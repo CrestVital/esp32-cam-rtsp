@@ -1,5 +1,5 @@
 idf_component_register(
     SRCS "nvs_config.c"
     INCLUDE_DIRS "include"
-    REQUIRES nvs_flash log
+    REQUIRES nvs_flash log sensor_registry board_config
 )

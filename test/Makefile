@@ -5,7 +5,7 @@ CFLAGS_COMMON = -std=c99 -Wall -Wextra -Werror \
                 -Ithird-party/unity \
                 -Itest/mocks
 
-CFLAGS_NVS         = $(CFLAGS_COMMON) -Icomponents/nvs_config/include
+CFLAGS_NVS         = $(CFLAGS_COMMON) -Icomponents/nvs_config/include -I. -Iinclude -Isensors
 CFLAGS_APP_EVENT   = $(CFLAGS_COMMON) -Icomponents/app_event/include
 CFLAGS_POWER_MGR   = $(CFLAGS_COMMON) \
                      -Icomponents/app_event/include \

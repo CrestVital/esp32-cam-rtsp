@@ -1,6 +1,6 @@
 # Status — esp32-cam-rtsp
 
-**Last updated:** 2026-07-01
+**Last updated:** 2026-07-02
 **Version:** 0.0.1-dev
 **Active branch:** main
 
@@ -12,8 +12,8 @@ Infrastructure components merged to main: sys_log, nvs_config (extended
 with network_mode field), app_event, power_manager, wifi_manager (with
 mutex-guarded reconnect task, cooperative shutdown, in-loop generation
 guard, conditional BT linker dependency, concurrent-task tripwire),
-status_indicator, sensor_registry. Test infrastructure (Unity host
-tests) in place — 92 tests across 6 suites.
+status_indicator, board/sensor abstraction (Variant B), sensor_registry.
+Test infrastructure (Unity host tests) in place — 93 tests across 6 suites.
 [env:native] PlatformIO environment ready — host tests runnable via both
 pio test -e native and make -f test/Makefile. Firmware builds verified on
 all three target boards (LilyGo T-Camera Plus, AI Thinker ESP32-CAM,
@@ -31,11 +31,35 @@ both GitHub Actions workflows (ESPCAMFW-53). Board × sensor build matrix
 introduced — `platformio.ini` now emits 6 firmware images (3 boards ×
 2 sensors, all pairs confirmed valid by hardware), `BOARD_SENSOR_OV*`
 redefined as a supported-sensor set, compile-time cross-check enforces
-valid pairs (ESPCAMFW-82).
+valid pairs (ESPCAMFW-82). NVS config validation is now sensor-driven —
+`nvs_config`'s resolution/FPS upper bounds derive from the active sensor's
+capabilities via `sensor_caps.h`, fixing a defect that rejected the OV2640's
+native 1200px height (ESPCAMFW-57).
 
 ---
 
 ## What's Done
+
+- **[ESPCAMFW-57]** ✅ NVS validation bound to the sensor registry —
+  `CAM_WIDTH_MAX`/`CAM_HEIGHT_MAX`/`CAM_FPS_MAX` in `components/nvs_config/
+  nvs_config.c` now expand to `SENSOR_MAX_WIDTH`/`SENSOR_MAX_HEIGHT`/
+  `SENSOR_MAX_FPS` from `sensor_caps.h` instead of hardcoded `1920`/`1080`/`60`;
+  fixes a defect where the hardcoded `1080` height cap rejected the OV2640's
+  native `1200`px resolution; `CMakeLists.txt` `REQUIRES` extended with
+  `sensor_registry board_config` (first component-with-sources to consume the
+  sensor registry); `test/Makefile` `CFLAGS_NVS` extended to resolve
+  board/sensor headers in the host build; 1 new regression test
+  (`test_save_cam_height_1200_regression_ov2640_native_resolution`) + 4
+  boundary tests recalculated for OV2640, applied identically to both test
+  copies (93 host tests total, 0 failures); reviewed by Claude Opus across 2
+  cycles — first attempt discarded entirely (coding agent mixed A4 with an
+  unrelated, unreviewed build-path revert and mis-reported the work done);
+  second attempt correctly scoped but Opus caught the native test copy
+  (`test/native/test_nvs_config/test_nvs_config.c`) left unsynced with a
+  false claim in the report that it had been updated — fixed directly by the
+  orchestrator (mechanical, pre-verified against the canonical copy) rather
+  than a third agent cycle; real ESP-IDF build verified on
+  `lilygo-t-camera-plus-ov2640`
 
 - **[ESPCAMFW-82]** ✅ Board × sensor build matrix — `BOARD_SENSOR_OV*`
   redefined as a supported-sensor **set** (not exclusive selection) in all
