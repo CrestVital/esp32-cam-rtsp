@@ -5,5 +5,7 @@
 #   #include CONFIG_BOARD_DATA_FILE   (e.g. "boards/lilygo_t_camera_plus.h")
 # across all components that include board.h.
 idf_component_register(
-    INCLUDE_DIRS "${CMAKE_SOURCE_DIR}/boards"
+    INCLUDE_DIRS
+        "${CMAKE_SOURCE_DIR}"
+        "${CMAKE_SOURCE_DIR}/boards"
 )

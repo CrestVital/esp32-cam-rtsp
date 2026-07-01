@@ -60,7 +60,7 @@ void test_save_cam_width_below_min_rejected(void)
 void test_save_cam_width_above_max_rejected(void)
 {
     g_cfg.rtsp_port = 554;
-    g_cfg.cam_width = 1921;
+    g_cfg.cam_width = 1601;
     g_cfg.cam_height = 720;
     g_cfg.cam_fps = 15;
     g_cfg.cam_brightness = 0;
@@ -83,7 +83,7 @@ void test_save_cam_height_above_max_rejected(void)
 {
     g_cfg.rtsp_port = 554;
     g_cfg.cam_width = 1280;
-    g_cfg.cam_height = 1081;
+    g_cfg.cam_height = 1201;
     g_cfg.cam_fps = 15;
     g_cfg.cam_brightness = 0;
     g_cfg.mdns_name[0] = 'x';
@@ -183,7 +183,7 @@ void test_save_cam_width_min_accepted(void)
 void test_save_cam_width_max_accepted(void)
 {
     g_cfg.rtsp_port = 554;
-    g_cfg.cam_width = 1920;
+    g_cfg.cam_width = 1600;
     g_cfg.cam_height = 720;
     g_cfg.cam_fps = 15;
     g_cfg.cam_brightness = 0;
@@ -206,7 +206,23 @@ void test_save_cam_height_max_accepted(void)
 {
     g_cfg.rtsp_port = 554;
     g_cfg.cam_width = 1280;
-    g_cfg.cam_height = 1080;
+    g_cfg.cam_height = 1200;
+    g_cfg.cam_fps = 15;
+    g_cfg.cam_brightness = 0;
+    strncpy(g_cfg.mdns_name, "espcam", sizeof(g_cfg.mdns_name));
+    TEST_ASSERT_EQUAL(ESP_OK, config_save(&g_cfg));
+}
+
+void test_save_cam_height_1200_regression_ov2640_native_resolution(void)
+{
+    /* Regression test for ESPCAMFW-57. Before this ticket, CAM_HEIGHT_MAX
+     * was hardcoded to 1080, which incorrectly rejected 1200 -- the
+     * native vertical resolution of the OV2640 sensor (SENSOR_MAX_HEIGHT
+     * in sensors/ov2640.h). CAM_HEIGHT_MAX is now derived from
+     * SENSOR_MAX_HEIGHT via sensor_caps.h, so 1200 must be accepted. */
+    g_cfg.rtsp_port = 554;
+    g_cfg.cam_width = 1280;
+    g_cfg.cam_height = 1200;
     g_cfg.cam_fps = 15;
     g_cfg.cam_brightness = 0;
     strncpy(g_cfg.mdns_name, "espcam", sizeof(g_cfg.mdns_name));
@@ -441,6 +457,7 @@ int main(void)
     RUN_TEST(test_save_cam_width_max_accepted);
     RUN_TEST(test_save_cam_height_min_accepted);
     RUN_TEST(test_save_cam_height_max_accepted);
+    RUN_TEST(test_save_cam_height_1200_regression_ov2640_native_resolution);
     RUN_TEST(test_save_cam_fps_min_accepted);
     RUN_TEST(test_save_cam_fps_max_accepted);
     RUN_TEST(test_save_cam_brightness_min_accepted);

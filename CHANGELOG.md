@@ -6,6 +6,76 @@ Versioning: [Semantic Versioning](https://semver.org/)
 
 ## [Unreleased]
 
+### Fixed — ESPCAMFW-84
+
+- **Real ESP-IDF build failure on all 6 board×sensor environments:**
+  `components/board_config/CMakeLists.txt` and `components/sensor_registry/
+  CMakeLists.txt` each exposed an `INCLUDE_DIRS` entry pointing directly at
+  `boards/`/`sensors/`, while the Kconfig-generated `CONFIG_BOARD_DATA_FILE`/
+  `CONFIG_SENSOR_DATA_FILE` values already carry the `boards/`/`sensors/`
+  prefix -- any real source file pulling in `include/board.h`/`include/
+  sensor_caps.h` hit a doubled path (`boards/boards/...`) and failed to
+  compile (`fatal error: boards/lilygo_t_camera_plus.h: No such file or
+  directory`). Latent since ESPCAMFW-54/56 -- nothing with actual source
+  files exercised this include path in the real firmware build until
+  ESPCAMFW-57 (`nvs_config.c`); local builds were masked by a stale
+  `.pio/build/<env>` cache, only a clean checkout (CI) surfaced it.
+- Fix: added `"${CMAKE_SOURCE_DIR}"` (project root) to both components'
+  `INCLUDE_DIRS`, matching the pattern `test/Makefile` already used
+  correctly for the host-test build. `Kconfig.projbuild` (prefix kept, per
+  ADR-006/ADR-008), `test/mocks/sdkconfig.h`, and `test/Makefile` untouched.
+- Verified with a fully clean rebuild (`.pio/build/<env>` removed before
+  each run, matching CI): all three boards (`lilygo-t-camera-plus-ov2640`,
+  `ai-thinker-esp32-cam-ov2640`, `olimex-esp32-poe-ov2640`) build with zero
+  errors; `make -f test/Makefile` unaffected (93/0).
+
+### Added — ESPCAMFW-57
+
+- **NVS validation bound to the sensor registry (per-sensor limits):**
+  `components/nvs_config/nvs_config.c` now derives its camera resolution/FPS
+  upper bounds from the active sensor's capabilities instead of hardcoded
+  literals — `CAM_WIDTH_MAX`/`CAM_HEIGHT_MAX`/`CAM_FPS_MAX` now expand to
+  `SENSOR_MAX_WIDTH`/`SENSOR_MAX_HEIGHT`/`SENSOR_MAX_FPS` from
+  `include/sensor_caps.h` (`#include "sensor_caps.h"` added). `MIN` bounds,
+  `DEFAULT_CAM_*`, and all NVS read/write/validation logic unchanged.
+- **Fixes a validation defect:** `CAM_HEIGHT_MAX` was hardcoded to `1080`,
+  which incorrectly rejected `1200` — the native vertical resolution of the
+  OV2640 sensor (`SENSOR_MAX_HEIGHT` in `sensors/ov2640.h`). A dedicated
+  regression test (`test_save_cam_height_1200_regression_ov2640_native_resolution`)
+  guards this going forward.
+- `components/nvs_config/CMakeLists.txt`: `REQUIRES` extended with
+  `sensor_registry board_config` so `sensor_caps.h`/`board.h` resolve in the
+  real ESP-IDF build — `nvs_config` is the first component-with-sources to
+  consume the sensor registry (previously only Kconfig-only components and
+  `src/` referenced it).
+- `test/Makefile`: `CFLAGS_NVS` extended with `-I. -Iinclude -Isensors`,
+  mirroring the existing `CFLAGS_SENSOR_REGISTRY` pattern, so the host-test
+  build for `nvs_config` can resolve `sensor_caps.h`/`board.h` and the active
+  board/sensor data files. `test/mocks/sdkconfig.h` needed no change — it
+  already carried `CONFIG_BOARD_DATA_FILE`/`CONFIG_SENSOR_DATA_FILE` from
+  ESPCAMFW-56.
+- 1 new host test (regression, above) added to both
+  `test/components/nvs_config/test_nvs_config.c` and
+  `test/native/test_nvs_config/test_nvs_config.c`; four pre-existing boundary
+  tests recalculated for the OV2640 host-test sensor (1921→1601, 1920→1600,
+  1081→1201, 1080→1200); FPS boundary tests unchanged (`SENSOR_MAX_FPS`
+  for OV2640 equals the old hardcoded `60`). 93 tests total across 6 suites
+  (was 92), 0 failures.
+- Reviewed by Claude Opus across 2 coding/review cycles. Cycle 1 (first
+  attempt) was discarded in full — the coding agent's output mixed the A4
+  changes with an unrelated, unverified build-path "fix" (reverting merged
+  ESPCAMFW-56/82 design decisions without an ADR) and its report described
+  the wrong work entirely; rolled back before any commit. Cycle 1 (rerun)
+  correctly scoped the diff to the 5 files above, but Claude Opus's review
+  (❌ CHANGES REQUIRED) found the native test copy
+  (`test/native/test_nvs_config/test_nvs_config.c`) had not been updated —
+  a logical break, since `test_save_cam_height_above_max_rejected` (`1081`)
+  would silently pass with the new `1200` bound if that suite were ever run —
+  and that the coding agent's report falsely claimed both copies were
+  updated. Fixed directly (orchestrator-applied, mirroring the already-correct
+  canonical copy) rather than spinning up a third agent cycle for a
+  mechanical, pre-verified change.
+
 ### Added — ESPCAMFW-82
 
 - **Board × sensor build matrix:** the build system now emits one firmware
