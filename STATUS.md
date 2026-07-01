@@ -1,6 +1,6 @@
 # Status — esp32-cam-rtsp
 
-**Last updated:** 2026-07-02
+**Last updated:** 2026-07-02 (ESPCAMFW-84)
 **Version:** 0.0.1-dev
 **Active branch:** main
 
@@ -34,11 +34,25 @@ redefined as a supported-sensor set, compile-time cross-check enforces
 valid pairs (ESPCAMFW-82). NVS config validation is now sensor-driven —
 `nvs_config`'s resolution/FPS upper bounds derive from the active sensor's
 capabilities via `sensor_caps.h`, fixing a defect that rejected the OV2640's
-native 1200px height (ESPCAMFW-57).
+native 1200px height (ESPCAMFW-57). A pre-existing INCLUDE_DIRS/Kconfig
+path-prefix mismatch in board_config/sensor_registry (latent since
+ESPCAMFW-54/56, surfaced by ESPCAMFW-57 being the first real source file to
+exercise it) is fixed (ESPCAMFW-84) -- all 6 board×sensor environments now
+build clean from scratch.
 
 ---
 
 ## What's Done
+
+- **[ESPCAMFW-84]** ✅ Fixed real ESP-IDF build failure (all 6 envs) --
+  `board_config`/`sensor_registry` CMakeLists.txt each added
+  `"${CMAKE_SOURCE_DIR}"` to `INCLUDE_DIRS`, fixing a doubled-path bug
+  (`boards/boards/...`, `sensors/sensors/...`) between the Kconfig-generated
+  `CONFIG_BOARD_DATA_FILE`/`CONFIG_SENSOR_DATA_FILE` values (which carry a
+  `boards/`/`sensors/` prefix) and the components' include paths (which
+  pointed directly at those directories); no changes to Kconfig, host-test
+  mocks, or docs -- purely additive. Verified via fully clean rebuild (no
+  `.pio/build` cache) on all three boards: SUCCESS; 93 host tests unaffected
 
 - **[ESPCAMFW-57]** ✅ NVS validation bound to the sensor registry —
   `CAM_WIDTH_MAX`/`CAM_HEIGHT_MAX`/`CAM_FPS_MAX` in `components/nvs_config/

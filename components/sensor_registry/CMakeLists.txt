@@ -9,6 +9,7 @@
 # itself can be found with #include "sensor_caps.h" from any component.
 idf_component_register(
     INCLUDE_DIRS
+        "${CMAKE_SOURCE_DIR}"
         "${CMAKE_SOURCE_DIR}/sensors"
         "${CMAKE_SOURCE_DIR}/include"
 )

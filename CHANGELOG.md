@@ -6,6 +6,29 @@ Versioning: [Semantic Versioning](https://semver.org/)
 
 ## [Unreleased]
 
+### Fixed — ESPCAMFW-84
+
+- **Real ESP-IDF build failure on all 6 board×sensor environments:**
+  `components/board_config/CMakeLists.txt` and `components/sensor_registry/
+  CMakeLists.txt` each exposed an `INCLUDE_DIRS` entry pointing directly at
+  `boards/`/`sensors/`, while the Kconfig-generated `CONFIG_BOARD_DATA_FILE`/
+  `CONFIG_SENSOR_DATA_FILE` values already carry the `boards/`/`sensors/`
+  prefix -- any real source file pulling in `include/board.h`/`include/
+  sensor_caps.h` hit a doubled path (`boards/boards/...`) and failed to
+  compile (`fatal error: boards/lilygo_t_camera_plus.h: No such file or
+  directory`). Latent since ESPCAMFW-54/56 -- nothing with actual source
+  files exercised this include path in the real firmware build until
+  ESPCAMFW-57 (`nvs_config.c`); local builds were masked by a stale
+  `.pio/build/<env>` cache, only a clean checkout (CI) surfaced it.
+- Fix: added `"${CMAKE_SOURCE_DIR}"` (project root) to both components'
+  `INCLUDE_DIRS`, matching the pattern `test/Makefile` already used
+  correctly for the host-test build. `Kconfig.projbuild` (prefix kept, per
+  ADR-006/ADR-008), `test/mocks/sdkconfig.h`, and `test/Makefile` untouched.
+- Verified with a fully clean rebuild (`.pio/build/<env>` removed before
+  each run, matching CI): all three boards (`lilygo-t-camera-plus-ov2640`,
+  `ai-thinker-esp32-cam-ov2640`, `olimex-esp32-poe-ov2640`) build with zero
+  errors; `make -f test/Makefile` unaffected (93/0).
+
 ### Added — ESPCAMFW-57
 
 - **NVS validation bound to the sensor registry (per-sensor limits):**
